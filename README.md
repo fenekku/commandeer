@@ -3,13 +3,19 @@ Commandeer
 
 Take command of your command line.
 
-Commandeer easily deals with getting data from the commandline to variables.
-Period. It does this little thing well and it lets **you** deal with the logic.
+Commandeer easily deals with getting data from the command line to variables.
+Period. It does this little thing well and it lets *you* deal with the rest.
 
 Usage
 -----
 
+Code:
+
 ```nimrod
+## myCLApp.nim
+
+import commandeer
+
 commandLine:
   argument number, int
   argument squareIt, bool
@@ -22,7 +28,16 @@ if squareIt:
   echo(number*number)
   
 if help:
-  echo("usage: program [help] <int> <int> ")
+  echo("Usage: program [--help|--times=<int>] <int> <bool> ")
+```
+
+Command line:
+
+```
+$ myCLApp 3 yes --times=5 -h
+3
+9
+Usage: program [--help|--times=<int>] <int> <bool>
 ```
 
 See testCommandeer.nim for a bigger example.
@@ -42,7 +57,7 @@ Design
 ------
 
 You should be the one in charge of the logic and most things should be
-explicit. Command-line parsers can do a lot for you, but I prefer to
+explicit. Command line parsers can do a lot for you, but I prefer to
 be in full control. Keep it simple and streamlined.
 
 TODO and Contribution
