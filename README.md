@@ -16,7 +16,11 @@ commandLine:
   option help, bool, "help", "h"
   option times, int, "times", "t"
 
-echo(number1)
+echo(number)
+
+if squareIt:
+  echo(number*number)
+  
 if help:
   echo("usage: program [help] <int> <int> ")
 ```
