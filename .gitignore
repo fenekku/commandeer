@@ -1,0 +1,5 @@
+*.sublime-*
+nimcache/
+
+commandeer
+testCommandeer
