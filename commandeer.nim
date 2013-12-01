@@ -1,27 +1,12 @@
 
-# macro commandLine*(body : stmt): stmt {.immediate.} =
-#   result = newNimNode(nnkStmtList)
-#   result.add(parseStmt("import parseopt"))
-#   result.add(newCall("echo", newStrLitNode("begin")))
-#   result.add(newNimNode(nnkForStmt).add(
-#     newIdentNode("kind"), newIdentNode("key"), newIdentNode("value"), newCall("getOpt"), newStmtList(
-#       newNimNode(nnkCaseStmt).add( newIdentNode("kind"),
-#         newNimNode(nnkOfBranch).add(newIdentNode("cmdArgument")),
-#           newNimNode(nnkCaseStmt).add( newIdentNode("key"),
-
-#         newNimNode(nnkOfBranch).add(newIdentNode("cmdLongOption"), newIdentNode("cmdShortOption"),
-#           newNimNode(nnkCaseStmt).add( newIdentNode("key"),
-#             newStmtList(body)),
-#           ),newStmtList(body)),
-#           newNimNode(nnkElse).add(newNimNode(nnkNilLit))))))
-
 import strutils
 import tables
 
-var arguments = newSeq[ string ]()
-var shortOptions = initTable[string, string](32)
-var longOptions = initTable[string, string](32)
-var argNumber = 0
+var
+  arguments = newSeq[ string ]()
+  shortOptions = initTable[string, string](32)
+  longOptions = initTable[string, string](32)
+  argNumber = 0
 
 ## String conversion
 proc convert(s : string, typ : int): int =
