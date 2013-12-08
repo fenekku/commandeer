@@ -2,14 +2,17 @@
 
 import commandeer
 
+proc usage(): string =
+  return "Usage: testCommandeer <number> <square it or not> [-h|--times=<other number>]"
+
 commandLine:
   argument number, int
   argument squareIt, bool
-  option help, bool, "help", "h"
   option times, int, "times", "t"
 
-if help:
-  echo "Usage: testCommandeer <number> <square it or not> [-h|--times=<other number>]"
+  exitoption "help", "h", usage()
+  exitoption "version", "v", "Version 0.1.0"
+
 
 echo("number + 1 from testCommandeer = ", number + 1)
 echo("squareIt = ", squareIt)
