@@ -1,8 +1,8 @@
 [Package]
 name        = "commandeer"
-version     = "0.1.0"
+version     = "0.1.1"
 author      = "Guillaume Viger"
-description = "A small command line parsing DSL"
+description = "A small command line parsing DSL (domain specific language)"
 license     = "MIT"
 
 InstallFiles = "commandeer.nim"

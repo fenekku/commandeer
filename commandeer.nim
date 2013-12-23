@@ -11,6 +11,8 @@ var
   error : ref E_Base
 
 ## String conversion
+proc convert(s : string, typ : char): char =
+  result = s[0]
 proc convert(s : string, typ : int): int =
   result = parseInt(s)
 proc convert(s : string, typ : float): float =
