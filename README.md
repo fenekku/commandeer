@@ -17,7 +17,7 @@ Usage
 
 import commandeer
 
-commandLine:
+commandline:
   argument number, int
   argument squareIt, bool
   option times, int, "times", "t"
@@ -54,18 +54,30 @@ Although it would be much cooler if it was. It should Just Work.
 Installation
 ------------
 
-For now, you can just copy the commandeer.nim file to your project and
-import it.
+**babel**
 
-It will eventually be added to Babel.
+Install [babel](https://github.com/nimrod-code/babel). Then do:
+
+  babel install commandeer
+
+This will install the latest tagged version of commandeer.
+
+**raw**
+
+You can copy the commandeer.nim file to your project and import it.
+
+When I go this way for Nimrod libraries, I like to create a `libs/`
+folder in my project and put third-party files in it. I then add the
+line `path = "libs"` to my `nimrod.cfg` file so that the `libs/`
+directory is looked into at compile time.
 
 
 Documentation
 -------------
 
-**commandLine**
+**commandline**
 
-`commandLine` is used to delimit the space where you define the command line
+`commandline` is used to delimit the space where you define the command line
 arguments you expect. All other commandeer constructs are to be placed under it.
 
 **argument `identifier` `type`**
@@ -94,9 +106,6 @@ This is mostly used for printing the version or the help message.
 Design
 ------
 
-This formulation of command line arguments correspondence was formulated
-following some design principles.
-
 - Keep as much logic out of the module as possible and into the hands of
   the developer
 - No magical variables should be made implicitly available. All created
@@ -104,8 +113,8 @@ following some design principles.
 - Command line parsers can do a lot for you, but I prefer to
   be in full control. Keep it simple and streamlined.
 
+
 TODO and Contribution
 ---------------------
 
-- Add to Babel package repository
 - Default values
