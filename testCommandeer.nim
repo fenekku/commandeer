@@ -2,6 +2,8 @@
 
 import commandeer
 
+import tables
+
 proc usage(): string =
   return "Usage: testCommandeer <number> <square it or not> [-h|--times=<other number>]"
 
@@ -25,3 +27,6 @@ if times != 0:
   number = number * times
   echo("number * ", times, " = ", number)
 
+var a = tables.initTable[string, int]()
+a["boo"] = 1
+echo a["boo"]

@@ -1,4 +1,5 @@
 
+import parseopt
 import strutils
 import tables
 
@@ -54,19 +55,20 @@ template option*(identifier : expr, typ : expr, lName : string, sName : string):
   bind longOptions
   bind convert
   bind error
+  bind tables
 
   var identifier : typ
 
   block:
     var typeVar : typ
-    if longOptions.hasKey(lName):
+    if tables.hasKey(longOptions, lName):
       try:
-        identifier = convert(longOptions[lName], typeVar)
+        identifier = convert(tables.mget(longOptions, lName), typeVar)
       except EInvalidValue:
         error = getCurrentException()
-    elif shortOptions.hasKey(sName):
+    elif tables.hasKey(shortOptions, sName):
       try:
-        identifier = convert(shortOptions[sName], typeVar)
+        identifier = convert(tables.mget(shortOptions, sName), typeVar)
       except EInvalidValue:
         error = getCurrentException()
 
@@ -74,10 +76,11 @@ template option*(identifier : expr, typ : expr, lName : string, sName : string):
 template exitoption*(lName, sName, msg : string): stmt =
   bind shortOptions
   bind longOptions
+  bind tables
 
-  if longOptions.hasKey(lName):
+  if tables.hasKey(longOptions, lName):
     quit msg
-  elif shortOptions.hasKey(sName):
+  elif tables.hasKey(shortOptions,  sName):
     quit msg
 
 
@@ -86,17 +89,17 @@ template commandLine*(s : stmt): stmt {.immediate.} =
   bind shortOptions
   bind longOptions
   bind error
+  bind parseopt
+  bind tables
 
-  import parseopt
-  import tables
-  for kind, key, val in getopt():
+  for kind, key, val in parseopt.getopt():
     case kind
-    of cmdArgument:
+    of parseopt.cmdArgument:
       arguments.add(key)
-    of cmdLongOption:
-      longOptions.add(key, val)
-    of cmdShortOption:
-      shortOptions[key] = val
+    of parseopt.cmdLongOption:
+      tables.add(longOptions, key, val)
+    of parseopt.cmdShortOption:
+      tables.add(shortOptions, key, val)
     else:
       echo "other kind"
 
@@ -109,11 +112,12 @@ template commandLine*(s : stmt): stmt {.immediate.} =
 when isMainModule:
   import unittest
 
-  test "convert returns type value from strings":
+  test "convert() returns converted type value from strings":
     var intVar : int
     var floatVar : float
     var boolVar : bool
     var stringVar : string
+    var charVar : char
 
     check convert("10", intVar) == 10
     check convert("10.0", floatVar) == 10
@@ -121,3 +125,4 @@ when isMainModule:
     check convert("yes", boolVar) == true
     check convert("false", boolVar) == false
     check convert("no ", stringVar) == "no"
+    check convert("*", charVar) == '*'
