@@ -54,17 +54,19 @@ Although it would be much cooler if it was. It should Just Work.
 Installation
 ------------
 
+There are 2 ways to install commandeer:
+
 **babel**
 
 Install [babel](https://github.com/nimrod-code/babel). Then do:
 
-  babel install commandeer
+    babel install commandeer
 
 This will install the latest tagged version of commandeer.
 
 **raw**
 
-You can copy the commandeer.nim file to your project and import it.
+Copy the commandeer.nim file to your project and import it.
 
 When I go this way for Nimrod libraries, I like to create a `libs/`
 folder in my project and put third-party files in it. I then add the
@@ -80,22 +82,23 @@ Documentation
 `commandline` is used to delimit the space where you define the command line
 arguments you expect. All other commandeer constructs are to be placed under it.
 
-**argument `identifier` `type`**
+**argument `identifier`, `type`**
 
 It declares a variable named `identifier` of type `type` initialized with
-the appropriately converted value of the corresponding command line argument.
-The first occurrence of `argument` corresponds to the first argument, the second
-to the second argument and so on.
+the value of the corresponding command line argument converted to type `type`.
+Correspondence works as follows: the first occurrence of `argument` corresponds
+to the first argument, the second to the second argument and so on.
 
-**option `identifier` `type` `long option` `short option`**
+**option `identifier`, `type`, `long option`, `short option`**
 
 It declares a variable named `identifier` of type `type` initialized with
-the appropriately converted value of the corresponding command line option
-if it is present. Otherwise `identifier` is initialized to its default value.
+the value of the corresponding command line option converted to type `type`
+if it is present. Otherwise `identifier` is initialized to its default type value.
 
-Command line option syntax follows Nimrod's one e.g., `--times=3`, `-t=3`, `-t:3` and `--times:3` are all valid.
+Command line option syntax follows Nimrod's one e.g., `--times=3`,
+`-t=3`, `-t:3` and `--times:3` are all valid.
 
-**exitoption `long option` `short option` `exit message`**
+**exitoption `long option`, `short option`, `exit message`**
 
 It declares a long and short option pattern for which the application
 will immediately output `exit message` and exit.
@@ -117,4 +120,4 @@ Design
 TODO and Contribution
 ---------------------
 
-- Default values
+Test out and see what needs to be added.
