@@ -21,7 +21,8 @@ commandline:
   argument number, int
   argument squareIt, bool
   option times, int, "times", "t"
-  exitoption "help", "h", "Usage: program [--help|--times=<int>] <int> <bool>"
+  option debug, bool, "debug", "d"
+  exitoption "help", "h", "Usage: program [--times=<int>|--debug|--help] <int> <bool>"
 
 echo("Number = ", number)
 
@@ -32,16 +33,20 @@ if squareIt:
 if times != 0:
   echo("Times ", times, " = ", number*times)
 
+if debug:
+  echo("Debugging enabled")
+  
 ```
 
 **On the command line**
 
 ```
-$ myCLApp 3 yes --times=5
+$ myCLApp 3 yes --times=5 --debug
 Number = 3
 Squared = 9
 Times 5 = 45
-$ myCLApp 3 yes --times=5 --help
+Debugging enabled
+$ myCLApp 3 yes --times=5 --debug --help
 Usage: program [--help|--times=<int>] <int> <bool>
 ```
 
@@ -82,6 +87,7 @@ Documentation
 `commandline` is used to delimit the space where you define the command line
 arguments you expect. All other commandeer constructs are to be placed under it.
 
+
 **argument `identifier`, `type`**
 
 It declares a variable named `identifier` of type `type` initialized with
@@ -89,14 +95,17 @@ the value of the corresponding command line argument converted to type `type`.
 Correspondence works as follows: the first occurrence of `argument` corresponds
 to the first argument, the second to the second argument and so on.
 
+
 **option `identifier`, `type`, `long option`, `short option`**
 
 It declares a variable named `identifier` of type `type` initialized with
 the value of the corresponding command line option converted to type `type`
 if it is present. Otherwise `identifier` is initialized to its default type value.
 
-Command line option syntax follows Nimrod's one e.g., `--times=3`,
-`-t=3`, `-t:3` and `--times:3` are all valid.
+Command line option syntax follows Nimrod's one e.g., `--times=3`, `--times:3`, `-t=3`, `-t:3` and  are all valid.
+
+Syntactic sugar is provided for boolean options such that only the presence of the option is needed to give a true value.
+
 
 **exitoption `long option`, `short option`, `exit message`**
 
@@ -104,6 +113,14 @@ It declares a long and short option pattern for which the application
 will immediately output `exit message` and exit.
 
 This is mostly used for printing the version or the help message.
+
+
+**Valid types for `type` are:**
+- pre-defined integer
+- pre-defined floating point
+- string
+- boolean
+- character
 
 
 Design
@@ -120,4 +137,5 @@ Design
 TODO and Contribution
 ---------------------
 
-Test out and see what needs to be added.
+- Move to Nimrod 0.9.4
+- Test out and see what needs to be added.
