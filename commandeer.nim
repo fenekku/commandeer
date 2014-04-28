@@ -102,7 +102,7 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
     of parseopt.cmdShortOption:
       tables.add(shortOptions, key, value)
     else:
-      nil
+      discard
 
   #Call the passed statements so that the above templates are called
   statements
