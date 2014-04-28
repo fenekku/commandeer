@@ -10,11 +10,12 @@ import commandeer
 
 proc usage(): string =
   var options = newSeq[string]()
-  options.add("--[a]lpha=a\tAdd <a> to <number>")
-  options.add("--[h]elp\tShow this help message")
-  options.add("--[o]utside\tIf --alpha option used, add a after squaring")
-  options.add("--[t]esting\tTurn on unittests")
-  options.add("--[v]ersion\tShow the version number")
+  options.add("OPTIONS:")
+  options.add("\t--[a]lpha=a\tAdd <a> to <number>")
+  options.add("\t--[h]elp\tShow this help message")
+  options.add("\t--[o]utside\tIf --alpha option used, add a after squaring")
+  options.add("\t--[t]esting\tTurn on unittests")
+  options.add("\t--[v]ersion\tShow the version number")
   return "Usage: testCommandeer <number> <squareIt> [OPTIONS]\n" &
          join(options, "\n")
 
