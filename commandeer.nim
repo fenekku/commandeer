@@ -8,17 +8,17 @@ var
   arguments = newSeq[ string ]()
   shortOptions = initTable[string, string](32)
   longOptions = initTable[string, string](32)
-  argNumber = 0
+  argumentIndex = 0
   error : ref E_Base
 
 ## String conversion
-proc convert(s : string, typ : char): char =
+proc convert(s : string, ofType : char): char =
   result = s[0]
-proc convert(s : string, typ : int): int =
+proc convert(s : string, ofType : int): int =
   result = parseInt(s)
-proc convert(s : string, typ : float): float =
+proc convert(s : string, ofType : float): float =
   result = parseFloat(s)
-proc convert(s : string, typ : bool): bool =
+proc convert(s : string, ofType : bool): bool =
   ## will accept "yes", "true" as true values
   if s == "":
     ## the only way we get an empty string here is because of a key
@@ -27,64 +27,65 @@ proc convert(s : string, typ : bool): bool =
     result = true
   else:
     result = parseBool(s)
-proc convert(s : string, typ : string): string =
+proc convert(s : string, ofType : string): string =
     result = s.strip
 
 
-template argument*(identifier : expr, typ : expr): stmt {.immediate.} =
+template argument*(identifier : expr, ofType : expr): stmt {.immediate.} =
   bind arguments
-  bind argNumber
+  bind argumentIndex
   bind convert
   bind error
 
-  var identifier : typ
+  var identifier : ofType
 
-  if arguments.len <= argNumber:
+  if arguments.len <= argumentIndex:
     error = newException(E_Base, "Not enough command-line arguments")
   else:
-    var typeVar : typ
+    var typeVar : ofType
     try:
-      identifier = convert(arguments[argNumber], typeVar)
-      inc(argNumber)
+      identifier = convert(arguments[argumentIndex], typeVar)
+      inc(argumentIndex)
     except EInvalidValue:
       error = getCurrentException()
 
 
-template option*(identifier : expr, typ : expr, lName : string, sName : string): stmt {.immediate.} =
+template option*(identifier : expr, ofType : expr, longName : string,
+                 shortName : string): stmt {.immediate.} =
   bind shortOptions
   bind longOptions
   bind convert
   bind error
   bind tables
 
-  var identifier : typ
+  var identifier : ofType
 
   block:
-    var typeVar : typ
-    if tables.hasKey(longOptions, lName):
+    var typeVar : ofType
+    if tables.hasKey(longOptions, longName):
       try:
-        identifier = convert(tables.mget(longOptions, lName), typeVar)
+        identifier = convert(tables.mget(longOptions, longName), typeVar)
       except EInvalidValue:
         error = getCurrentException()
-    elif tables.hasKey(shortOptions, sName):
+    elif tables.hasKey(shortOptions, shortName):
       try:
-        identifier = convert(tables.mget(shortOptions, sName), typeVar)
+        identifier = convert(tables.mget(shortOptions, shortName), typeVar)
       except EInvalidValue:
         error = getCurrentException()
 
 
-template exitoption*(lName, sName, msg : string): stmt =
+template exitoption*(longName, shortName, msg : string): stmt =
   bind shortOptions
   bind longOptions
   bind tables
 
-  if tables.hasKey(longOptions, lName):
+  if tables.hasKey(longOptions, longName):
     quit msg
-  elif tables.hasKey(shortOptions,  sName):
+  elif tables.hasKey(shortOptions,  shortName):
     quit msg
 
 
-template commandLine*(s : stmt): stmt {.immediate.} =
+template commandLine*(statements : stmt): stmt {.immediate.} =
   bind arguments
   bind shortOptions
   bind longOptions
@@ -92,19 +93,19 @@ template commandLine*(s : stmt): stmt {.immediate.} =
   bind parseopt
   bind tables
 
-  for kind, key, val in parseopt.getopt():
+  for kind, key, value in parseopt.getopt():
     case kind
     of parseopt.cmdArgument:
       arguments.add(key)
     of parseopt.cmdLongOption:
-      tables.add(longOptions, key, val)
+      tables.add(longOptions, key, value)
     of parseopt.cmdShortOption:
-      tables.add(shortOptions, key, val)
+      tables.add(shortOptions, key, value)
     else:
-      echo "other kind"
+      nil
 
   #Call the passed statements so that the above templates are called
-  s
+  statements
   if not error.isNil:
     quit error.msg
 
