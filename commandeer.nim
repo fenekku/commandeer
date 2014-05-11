@@ -1,24 +1,24 @@
 
-import parseopt
+import parseopt2
 import strutils
 import tables
 
 
 var
-  arguments = newSeq[ string ]()
+  argumentList = newSeq[ string ]()
   shortOptions = initTable[string, string](32)
   longOptions = initTable[string, string](32)
   argumentIndex = 0
   error : ref E_Base
 
 ## String conversion
-proc convert(s : string, ofType : char): char =
+proc convert(s : string, t : char): char =
   result = s[0]
-proc convert(s : string, ofType : int): int =
+proc convert(s : string, t : int): int =
   result = parseInt(s)
-proc convert(s : string, ofType : float): float =
+proc convert(s : string, t : float): float =
   result = parseFloat(s)
-proc convert(s : string, ofType : bool): bool =
+proc convert(s : string, t : bool): bool =
   ## will accept "yes", "true" as true values
   if s == "":
     ## the only way we get an empty string here is because of a key
@@ -27,30 +27,30 @@ proc convert(s : string, ofType : bool): bool =
     result = true
   else:
     result = parseBool(s)
-proc convert(s : string, ofType : string): string =
+proc convert(s : string, t : string): string =
     result = s.strip
 
 
-template argument*(identifier : expr, ofType : expr): stmt {.immediate.} =
-  bind arguments
+template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
+  bind argumentList
   bind argumentIndex
   bind convert
   bind error
 
-  var identifier : ofType
+  var identifier : t
 
-  if arguments.len <= argumentIndex:
-    error = newException(E_Base, "Not enough command-line arguments")
+  if argumentList.len <= argumentIndex:
+    error = newException(E_Base, "Not enough command-line argumentList")
   else:
-    var typeVar : ofType
+    var typeVar : t
     try:
-      identifier = convert(arguments[argumentIndex], typeVar)
+      identifier = convert(argumentList[argumentIndex], typeVar)
       inc(argumentIndex)
     except EInvalidValue:
       error = getCurrentException()
 
 
-template option*(identifier : expr, ofType : expr, longName : string,
+template option*(identifier : expr, t : typeDesc, longName : string,
                  shortName : string): stmt {.immediate.} =
   bind shortOptions
   bind longOptions
@@ -58,10 +58,10 @@ template option*(identifier : expr, ofType : expr, longName : string,
   bind error
   bind tables
 
-  var identifier : ofType
+  var identifier : t
 
   block:
-    var typeVar : ofType
+    var typeVar : t
     if tables.hasKey(longOptions, longName):
       try:
         identifier = convert(tables.mget(longOptions, longName), typeVar)
@@ -86,20 +86,20 @@ template exitoption*(longName, shortName, msg : string): stmt =
 
 
 template commandLine*(statements : stmt): stmt {.immediate.} =
-  bind arguments
+  bind argumentList
   bind shortOptions
   bind longOptions
   bind error
-  bind parseopt
+  bind parseopt2
   bind tables
 
-  for kind, key, value in parseopt.getopt():
+  for kind, key, value in parseopt2.getopt():
     case kind
-    of parseopt.cmdArgument:
-      arguments.add(key)
-    of parseopt.cmdLongOption:
+    of parseopt2.cmdArgument:
+      argumentList.add(key)
+    of parseopt2.cmdLongOption:
       tables.add(longOptions, key, value)
-    of parseopt.cmdShortOption:
+    of parseopt2.cmdShortOption:
       tables.add(shortOptions, key, value)
     else:
       discard

@@ -1,6 +1,6 @@
 [Package]
 name        = "commandeer"
-version     = "0.1.2"
+version     = "0.2.0"
 author      = "Guillaume Viger"
 description = "A small command line parsing DSL (domain specific language)"
 license     = "MIT"
@@ -8,4 +8,4 @@ license     = "MIT"
 InstallFiles = "commandeer.nim"
 
 [Deps]
-Requires: "nimrod >= 0.9.2"
+Requires: "nimrod >= 0.9.4"

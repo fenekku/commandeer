@@ -35,7 +35,7 @@ if times != 0:
 
 if debug:
   echo("Debugging enabled")
-  
+
 ```
 
 **On the command line**
@@ -137,5 +137,4 @@ Design
 TODO and Contribution
 ---------------------
 
-- Move to Nimrod 0.9.4
 - Test out and see what needs to be added.
