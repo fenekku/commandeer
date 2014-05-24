@@ -40,7 +40,7 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
   var identifier : t
 
   if argumentList.len <= argumentIndex:
-    error = newException(E_Base, "Not enough command-line argumentList")
+    error = newException(E_Base, "Not enough command-line arguments")
   else:
     var typeVar : t
     try:
