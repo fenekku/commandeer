@@ -1,6 +1,6 @@
 ## commandeer example file (it doubles as a test file too!)
 ## When testing commandeer run it as follows on the command line:
-## ./testCommandeer 2 on --outside -a:2
+## ./testCommandeer 2 on --outside -a:2 --testing
 
 from strutils import join
 import tables
@@ -47,3 +47,4 @@ if testing:
   var a = tables.initTable[string, int]()
   a["boo"] = 1
   echo a["boo"]
+  echo "Tests pass!"

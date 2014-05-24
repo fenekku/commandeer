@@ -39,7 +39,7 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
 
   var identifier : t
 
-  if argumentList.len <= argumentIndex:
+  if argumentList.len == argumentIndex:
     error = newException(E_Base, "Not enough command-line arguments")
   else:
     var typeVar : t
@@ -48,6 +48,32 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
       inc(argumentIndex)
     except EInvalidValue:
       error = getCurrentException()
+
+
+template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): stmt {.immediate.} =
+  bind argumentList
+  bind argumentIndex
+  bind convert
+  bind error
+
+  var identifier = newSeq[t]()
+
+  if atLeast1 and (argumentList.len == argumentIndex):
+    error = newException(E_Base, "Not enough command-line arguments")
+  else:
+    var typeVar : t
+    var firstError = true
+    while true:
+      if argumentList.len == argumentIndex:
+        break
+      try:
+        identifier.add(convert(argumentList[argumentIndex], typeVar))
+        inc(argumentIndex)
+        firstError = false
+      except EInvalidValue:
+        if atLeast1 and firstError:
+          error = getCurrentException()
+        break
 
 
 template option*(identifier : expr, t : typeDesc, longName : string,
