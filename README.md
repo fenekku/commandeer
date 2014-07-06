@@ -113,7 +113,7 @@ It declares a variable named `identifier` of type `type` initialized with
 the value of the corresponding command line option converted to type `type`
 if it is present. Otherwise `identifier` is initialized to its default type value.
 
-Command line option syntax follows Nimrod's one e.g., `--times=3`, `--times:3`, `-t=3`, `-t:3` and  are all valid.
+The command line option syntax follows Nimrod's one i.e., `--times=3`, `--times:3`, `-t=3`, `-t:3` are all valid.
 
 Syntactic sugar is provided for boolean options such that only the presence of the option is needed to give a true value.
 
