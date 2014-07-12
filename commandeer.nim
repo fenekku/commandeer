@@ -106,9 +106,9 @@ template exitoption*(longName, shortName, msg : string): stmt =
   bind tables
 
   if tables.hasKey(longOptions, longName):
-    quit msg
+    quit msg, QuitSuccess
   elif tables.hasKey(shortOptions,  shortName):
-    quit msg
+    quit msg, QuitSuccess
 
 
 template commandLine*(statements : stmt): stmt {.immediate.} =
