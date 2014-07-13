@@ -27,7 +27,8 @@ commandline:
   option optionalInteger, int, "int", "i"
   option testing, bool, "testing", "t"
   exitoption "help", "h",
-             "Usage: myCLApp [--testing|--int=<int>|--help] <int> <float> <char> <string>..."
+             "Usage: myCLApp [--testing|--int=<int>|--help] " &
+             "<int> <float> <char> <string>..."
 
 echo("integer = ", integer)
 echo("floatingPoint = ", floatingPoint)
