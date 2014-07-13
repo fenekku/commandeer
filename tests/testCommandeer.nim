@@ -1,50 +1,43 @@
-## commandeer example file (it doubles as a test file too!)
+## commandeer test file (it doubles as an example file too!)
 ## When testing commandeer run it as follows on the command line:
-## ./testCommandeer 2 on --outside -a:2 --testing
+## ./testCommandeer 1 2.0 '?' --testing one two three -i:10
 
-from strutils import join
 import tables
+import unittest
 
 import commandeer
 
 
-proc usage(): string =
-  var options = newSeq[string]()
-  options.add("OPTIONS:")
-  options.add("\t--[a]lpha=a\tAdd <a> to <number>")
-  options.add("\t--[h]elp\tShow this help message")
-  options.add("\t--[o]utside\tIf --alpha option used, add a after squaring")
-  options.add("\t--[t]esting\tTurn on unittests")
-  options.add("\t--[v]ersion\tShow the version number")
-  return "Usage: testCommandeer <number> <squareIt> [OPTIONS]\n" &
-         join(options, "\n")
-
-commandLine:
-  argument number, int
-  argument squareIt, bool
-  option alpha, int, "alpha", "a"
-  option outside, bool, "outside", "o"
+commandline:
+  argument integer, int
+  argument floatingPoint, float
+  argument character, char
+  arguments strings, string
+  option optionalInteger, int, "int", "i"
   option testing, bool, "testing", "t"
+  exitoption "help", "h",
+             "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <string>..."
 
-  exitoption "help", "h", usage()
-  exitoption "version", "v", "Version 0.1.0"
+echo("integer = ", integer)
+echo("floatingPoint = ", floatingPoint)
+echo("character = ", character)
+echo("strings (one or more) = ", strings)
 
-
-let s = number + 1
-if squareIt:
-  if alpha != 0:
-    if outside:
-      echo("(number + 1)^2 + alpha = ", s*s + alpha)
-    else:
-      echo("(number + 1 + alpha)^2 = ", (s + alpha)*(s + alpha))
-  else:
-    echo("(number + 1)^2 = ", s*s)
-else:
-  echo("number + 1 = ", s)
+if optionalInteger != 0:
+  echo("optionalInteger = ", optionalInteger)
 
 if testing:
+  echo("Testing testCommandeer...")
+
   #Test that tables is not overwritten
   var a = tables.initTable[string, int]()
   a["boo"] = 1
-  echo a["boo"]
+  check a["boo"] == 1
+
+  check integer == 1
+  check floatingPoint == 2.0
+  check character == '?'
+  check strings == @["one", "two", "three"]
+  check optionalInteger == 10
+
   echo "Tests pass!"

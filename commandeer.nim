@@ -9,7 +9,7 @@ var
   shortOptions = initTable[string, string](32)
   longOptions = initTable[string, string](32)
   argumentIndex = 0
-  error : ref E_Base
+  errorMsgs : seq[string] = @[]
 
 ## String conversion
 proc convert(s : string, t : char): char =
@@ -35,31 +35,44 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
   bind argumentList
   bind argumentIndex
   bind convert
-  bind error
+  bind errorMsgs
 
   var identifier : t
 
-  if argumentList.len == argumentIndex:
-    error = newException(E_Base, "Not enough command-line arguments")
+  if argumentList.len <= argumentIndex:
+    let eMsg = "Missing command line arguments"
+    if len(errorMsgs) == 0:
+      errorMsgs.add(eMsg)
+    else:
+      if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+        errorMsgs.add(eMsg)
   else:
     var typeVar : t
     try:
       identifier = convert(argumentList[argumentIndex], typeVar)
-      inc(argumentIndex)
     except EInvalidValue:
-      error = getCurrentException()
+      let eMsg = capitalize(getCurrentExceptionMsg()) &
+                 " for argument " & $(argumentIndex+1)
+      errorMsgs.add(eMsg)
+
+  inc(argumentIndex)
 
 
 template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): stmt {.immediate.} =
   bind argumentList
   bind argumentIndex
   bind convert
-  bind error
+  bind errorMsgs
 
   var identifier = newSeq[t]()
 
-  if atLeast1 and (argumentList.len == argumentIndex):
-    error = newException(E_Base, "Not enough command-line arguments")
+  if atLeast1 and (argumentList.len <= argumentIndex):
+    let eMsg = "Missing command line arguments"
+    if len(errorMsgs) == 0:
+      errorMsgs.add(eMsg)
+    else:
+      if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+        errorMsgs.add(eMsg)
   else:
     var typeVar : t
     var firstError = true
@@ -67,12 +80,15 @@ template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): st
       if argumentList.len == argumentIndex:
         break
       try:
-        identifier.add(convert(argumentList[argumentIndex], typeVar))
+        let a = argumentList[argumentIndex]
         inc(argumentIndex)
+        identifier.add(convert(a, typeVar))
         firstError = false
       except EInvalidValue:
         if atLeast1 and firstError:
-          error = getCurrentException()
+          let eMsg = capitalize(getCurrentExceptionMsg()) &
+                     " for argument " & $(argumentIndex+1)
+          errorMsgs.add(eMsg)
         break
 
 
@@ -81,7 +97,7 @@ template option*(identifier : expr, t : typeDesc, longName : string,
   bind shortOptions
   bind longOptions
   bind convert
-  bind error
+  bind errorMsgs
   bind tables
 
   var identifier : t
@@ -92,12 +108,16 @@ template option*(identifier : expr, t : typeDesc, longName : string,
       try:
         identifier = convert(tables.mget(longOptions, longName), typeVar)
       except EInvalidValue:
-        error = getCurrentException()
+        let eMsg = capitalize(getCurrentExceptionMsg()) &
+                   " for option --" & longName
+        errorMsgs.add(eMsg)
     elif tables.hasKey(shortOptions, shortName):
       try:
         identifier = convert(tables.mget(shortOptions, shortName), typeVar)
       except EInvalidValue:
-        error = getCurrentException()
+        let eMsg = capitalize(getCurrentExceptionMsg()) &
+                   " for option -" & shortName
+        errorMsgs.add(eMsg)
 
 
 template exitoption*(longName, shortName, msg : string): stmt =
@@ -115,7 +135,7 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
   bind argumentList
   bind shortOptions
   bind longOptions
-  bind error
+  bind errorMsgs
   bind parseopt2
   bind tables
 
@@ -132,8 +152,8 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
 
   #Call the passed statements so that the above templates are called
   statements
-  if not error.isNil:
-    quit error.msg
+  if len(errorMsgs) > 0:
+    quit join(errorMsgs, "\n")
 
 
 when isMainModule:
