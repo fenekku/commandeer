@@ -10,6 +10,7 @@ var
   longOptions = initTable[string, string](32)
   argumentIndex = 0
   errorMsgs : seq[string] = @[]
+  customErrorMsg : string
 
 ## String conversion
 proc convert(s : string, t : char): char =
@@ -131,6 +132,11 @@ template exitoption*(longName, shortName, msg : string): stmt =
     quit msg, QuitSuccess
 
 
+template errormsg*(msg : string): stmt =
+  bind customErrorMsg
+  customErrorMsg = msg
+
+
 template commandLine*(statements : stmt): stmt {.immediate.} =
   bind argumentList
   bind shortOptions
@@ -138,6 +144,7 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
   bind errorMsgs
   bind parseopt2
   bind tables
+  bind customErrorMsg
 
   for kind, key, value in parseopt2.getopt():
     case kind
@@ -152,6 +159,10 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
 
   #Call the passed statements so that the above templates are called
   statements
+
+  if not customErrorMsg.isNil:
+    errorMsgs.add(customErrorMsg)
+
   if len(errorMsgs) > 0:
     quit join(errorMsgs, "\n")
 

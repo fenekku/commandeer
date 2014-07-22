@@ -29,6 +29,7 @@ commandline:
   exitoption "help", "h",
              "Usage: myCLApp [--testing|--int=<int>|--help] " &
              "<int> <float> <char> <string>..."
+  errormsg "You made a mistake!"
 
 echo("integer = ", integer)
 echo("floatingPoint = ", floatingPoint)
@@ -57,12 +58,17 @@ $ myCLApp 10 --help
 Usage: myCLApp [--testing|--int=<int>|--help] <int> <float> <char> <string>...
 ```
 
+When you have commandeer installed, try passing an incorrect set of
+command line arguments for fun!
+
 See the `tests` folder for other examples.
 
 That's all.
 
 It's not much and it doesn't pretend to be a magical experience.
-Although, it would be much cooler if it was. It should Just Work.
+Although, it would be much cooler if it was.
+
+It should Just Work.
 
 
 Installation
@@ -74,7 +80,7 @@ There are 2 ways to install commandeer:
 
 Install [babel](https://github.com/nimrod-code/babel). Then do:
 
-    babel install commandeer
+    $ babel install commandeer
 
 This will install the latest tagged version of commandeer.
 
@@ -94,7 +100,7 @@ Documentation
 **commandline**
 
 `commandline` is used to delimit the space where you define the command line
-arguments and options you expect. All other commandeer constructs (described below) are placed under it.
+arguments and options you expect. All other commandeer constructs (described below) are placed under it. They are all optional - although you probably want to use at least one, right?
 
 
 **argument `identifier`, `type`**
@@ -131,13 +137,19 @@ Syntactic sugar is provided for boolean options such that only the presence of t
 
 **exitoption `long name`, `short name`, `exit message`**
 
-It declares a long and short option pattern for which the application
+It declares a long and short option string for which the application
 will immediately output `exit message` and exit.
 
 This is mostly used for printing the version or the help message.
 
 
+**errormsg `custom error message`**
+
+It sets a string `custom error message` that will be displayed after the other error messages if the command line arguments or options are invalid.
+
+
 **Valid types for `type` are:**
+
 - pre-defined integer
 - pre-defined floating point
 - string

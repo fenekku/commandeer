@@ -8,6 +8,9 @@ import unittest
 import commandeer
 
 
+proc usage(): string =
+  result = "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <string>..."
+
 commandline:
   argument integer, int
   argument floatingPoint, float
@@ -15,8 +18,8 @@ commandline:
   arguments strings, string
   option optionalInteger, int, "int", "i"
   option testing, bool, "testing", "t"
-  exitoption "help", "h",
-             "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <string>..."
+  exitoption "help", "h", usage()
+  errormsg usage()
 
 echo("integer = ", integer)
 echo("floatingPoint = ", floatingPoint)
