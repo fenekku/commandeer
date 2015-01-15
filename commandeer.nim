@@ -5,7 +5,7 @@ import tables
 
 
 var
-  argumentList = newSeq[ string ]()
+  argumentList = newSeq[string]()
   shortOptions = initTable[string, string](32)
   longOptions = initTable[string, string](32)
   argumentIndex = 0
@@ -51,7 +51,7 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
     var typeVar : t
     try:
       identifier = convert(argumentList[argumentIndex], typeVar)
-    except EInvalidValue:
+    except ValueError:
       let eMsg = capitalize(getCurrentExceptionMsg()) &
                  " for argument " & $(argumentIndex+1)
       errorMsgs.add(eMsg)
@@ -85,7 +85,7 @@ template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): st
         inc(argumentIndex)
         identifier.add(convert(a, typeVar))
         firstError = false
-      except EInvalidValue:
+      except ValueError:
         if atLeast1 and firstError:
           let eMsg = capitalize(getCurrentExceptionMsg()) &
                      " for argument " & $(argumentIndex+1)
@@ -108,14 +108,14 @@ template option*(identifier : expr, t : typeDesc, longName : string,
     if tables.hasKey(longOptions, longName):
       try:
         identifier = convert(tables.mget(longOptions, longName), typeVar)
-      except EInvalidValue:
+      except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option --" & longName
         errorMsgs.add(eMsg)
     elif tables.hasKey(shortOptions, shortName):
       try:
         identifier = convert(tables.mget(shortOptions, shortName), typeVar)
-      except EInvalidValue:
+      except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option -" & shortName
         errorMsgs.add(eMsg)
@@ -160,10 +160,9 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
   #Call the passed statements so that the above templates are called
   statements
 
-  if not customErrorMsg.isNil:
-    errorMsgs.add(customErrorMsg)
-
   if len(errorMsgs) > 0:
+    if not customErrorMsg.isNil:
+      errorMsgs.add(customErrorMsg)
     quit join(errorMsgs, "\n")
 
 
