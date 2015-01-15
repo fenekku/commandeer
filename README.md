@@ -14,7 +14,7 @@ Usage
 
 **In code**
 
-```nimrod
+```nim
 ## myCLApp.nim
 
 import commandeer
@@ -49,7 +49,7 @@ if testing:
 ```
 $ myCLApp --testing 4 8.0 a one two -i:100
 integer = 4
-floatingPoint = 8.0000000000000000e+00
+floatingPoint = 8.0
 character = a
 strings (one or more) = @[one, two]
 optionalInteger = 100
@@ -76,11 +76,11 @@ Installation
 
 There are 2 ways to install commandeer:
 
-**babel**
+**nimble**
 
-Install [babel](https://github.com/nimrod-code/babel). Then do:
+Install [nimble](https://github.com/nim-lang/nimble). Then do:
 
-    $ babel install commandeer
+    $ nimble install commandeer
 
 This will install the latest tagged version of commandeer.
 
@@ -88,9 +88,9 @@ This will install the latest tagged version of commandeer.
 
 Copy the commandeer.nim file to your project and import it.
 
-When I go this way for Nimrod libraries, I like to create a `libs/`
+When I go this way for Nim libraries, I like to create a `libs/`
 folder in my project and put third-party files in it. I then add the
-line `path = "libs"` to my `nimrod.cfg` file so that the `libs/`
+line `path = "libs"` to my `nim.cfg` file so that the `libs/`
 directory is looked into at compile time.
 
 
@@ -130,7 +130,7 @@ It declares a variable named `identifier` of type `type` initialized with
 the value of the corresponding command line option converted to type `type`
 if it is present. Otherwise `identifier` is initialized to its default type value.
 
-The command line option syntax follows Nimrod's one i.e., `--times=3`, `--times:3`, `-t=3`, `-t:3` are all valid.
+The command line option syntax follows Nim's one i.e., `--times=3`, `--times:3`, `-t=3`, `-t:3` are all valid.
 
 Syntactic sugar is provided for boolean options such that only the presence of the option is needed to give a true value.
 
@@ -164,7 +164,8 @@ Design
   the developer as possible
 - No magical variables should be made implicitly available. All created
   variables should be explicitly chosen by the developer.
-- Keep it simple and streamlined. Command line parsers can do a lot for you, but I prefer to be in full control.
+- Keep it simple and streamlined. Command line parsers can do a lot for
+  you, but I prefer to be in adequate control.
 
 
 TODO and Contribution
