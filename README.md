@@ -100,12 +100,36 @@ Documentation
 **commandline**
 
 `commandline` is used to delimit the space where you define the command line
-arguments and options you expect. All other commandeer constructs (described below) are placed under it. They are all optional - although you probably want to use at least one, right?
+arguments and options you expect. All other commandeer constructs (described below)
+are placed under it. They are all optional - although you probably want to use at least one, right?
 
+**subcommand `identifier`, `name`**
+
+`subcommand` declares `identifier` to be a variable of type `bool` that is `true`
+if the first command line argument passed is `name` and is `false` otherwise.
+After it, you define the subcommand arguments and options you expect.
+All other commandeer constructs (described below) *can be* placed under it.
+
+For example:
+
+```nim
+commandline:
+  subcommand add, "add":
+    arguments filenames, string
+    option force, bool, "force", "f"
+  option globalOption, bool, "global", "g"
+
+if add:
+  echo "Adding", filenames
+if globalOption:
+  echo "Global option activated"
+```
+
+See `tests/testSubcommands.nim` for a larger example.
 
 **argument `identifier`, `type`**
 
-It declares a variable named `identifier` of type `type` initialized with
+`argument` declares a variable named `identifier` of type `type` initialized with
 the value of the corresponding command line argument converted to type `type`.
 Correspondence works as follows: the first occurrence of `argument` corresponds
 to the first argument, the second to the second argument and so on.
@@ -113,7 +137,7 @@ to the first argument, the second to the second argument and so on.
 
 **arguments `identifier`, `type` `[, atLeast1]`**
 
-It declares a variable named `identifier` of type `seq[type]` initialized with
+`arguments` declares a variable named `identifier` of type `seq[type]` initialized with
 the value of the sequential command line arguments that can be converted to type `type`.
 By default `atLeast1` is `true` which means there must be at least one argument of type
 `type` or else an error is thrown. Passing `false` there allows for 0 or more arguments of the
@@ -126,9 +150,10 @@ a supertype of another type in terms of conversion e.g., floats eat ints.
 
 **option `identifier`, `type`, `long name`, `short name`**
 
-It declares a variable named `identifier` of type `type` initialized with
-the value of the corresponding command line option converted to type `type`
-if it is present. Otherwise `identifier` is initialized to its default type value.
+`option` declares a variable named `identifier` of type `type` initialized with
+the value of the corresponding command line option `--long name` or `-short name` converted to type `type`
+if it is present. The `--` and `-` are added by commandeer for your convenience.
+If the option is not present, `identifier` is initialized to its default type value.
 
 The command line option syntax follows Nim's one i.e., `--times=3`, `--times:3`, `-t=3`, `-t:3` are all valid.
 
@@ -137,7 +162,7 @@ Syntactic sugar is provided for boolean options such that only the presence of t
 
 **exitoption `long name`, `short name`, `exit message`**
 
-It declares a long and short option string for which the application
+`exitoption` declares a long and short option string for which the application
 will immediately output `exit message` and exit.
 
 This is mostly used for printing the version or the help message.
@@ -145,7 +170,7 @@ This is mostly used for printing the version or the help message.
 
 **errormsg `custom error message`**
 
-It sets a string `custom error message` that will be displayed after the other error messages if the command line arguments or options are invalid.
+`errormsg` sets a string `custom error message` that will be displayed after the other error messages if the command line arguments or options are invalid.
 
 
 **Valid types for `type` are:**
@@ -167,10 +192,14 @@ Design
 - Keep it simple and streamlined. Command line parsers can do a lot for
   you, but I prefer to be in adequate control.
 
+In Trial
+--------
+
+- subcommand syntax: I considered different variants and this one is being tried now. Suggest alternatives!
 
 TODO and Contribution
 ---------------------
 
-- Subcommands
+- subcommands testing in the wild
 - Better tests!
 - Use and see what needs to be added.

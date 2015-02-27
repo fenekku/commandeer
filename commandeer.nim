@@ -11,6 +11,9 @@ var
   argumentIndex = 0
   errorMsgs : seq[string] = @[]
   customErrorMsg : string
+  inSubcommand = false
+  subcommandSelected = false
+
 
 ## String conversion
 proc convert(s : string, t : char): char =
@@ -37,26 +40,29 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
   bind argumentIndex
   bind convert
   bind errorMsgs
+  bind inSubcommand
+  bind subcommandSelected
 
   var identifier : t
 
-  if argumentList.len <= argumentIndex:
-    let eMsg = "Missing command line arguments"
-    if len(errorMsgs) == 0:
-      errorMsgs.add(eMsg)
-    else:
-      if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+  if (inSubcommand and subcommandSelected) or not inSubcommand:
+    if argumentList.len <= argumentIndex:
+      let eMsg = "Missing command line arguments"
+      if len(errorMsgs) == 0:
         errorMsgs.add(eMsg)
-  else:
-    var typeVar : t
-    try:
-      identifier = convert(argumentList[argumentIndex], typeVar)
-    except ValueError:
-      let eMsg = capitalize(getCurrentExceptionMsg()) &
-                 " for argument " & $(argumentIndex+1)
-      errorMsgs.add(eMsg)
+      else:
+        if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+          errorMsgs.add(eMsg)
+    else:
+      var typeVar : t
+      try:
+        identifier = convert(argumentList[argumentIndex], typeVar)
+      except ValueError:
+        let eMsg = capitalize(getCurrentExceptionMsg()) &
+                   " for argument " & $(argumentIndex+1)
+        errorMsgs.add(eMsg)
 
-  inc(argumentIndex)
+    inc(argumentIndex)
 
 
 template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): stmt {.immediate.} =
@@ -64,33 +70,36 @@ template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): st
   bind argumentIndex
   bind convert
   bind errorMsgs
+  bind inSubcommand
+  bind subcommandSelected
 
   var identifier = newSeq[t]()
 
-  if atLeast1 and (argumentList.len <= argumentIndex):
-    let eMsg = "Missing command line arguments"
-    if len(errorMsgs) == 0:
-      errorMsgs.add(eMsg)
-    else:
-      if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+  if (inSubcommand and subcommandSelected) or not inSubcommand:
+    if atLeast1 and (argumentList.len <= argumentIndex):
+      let eMsg = "Missing command line arguments"
+      if len(errorMsgs) == 0:
         errorMsgs.add(eMsg)
-  else:
-    var typeVar : t
-    var firstError = true
-    while true:
-      if argumentList.len == argumentIndex:
-        break
-      try:
-        let a = argumentList[argumentIndex]
-        inc(argumentIndex)
-        identifier.add(convert(a, typeVar))
-        firstError = false
-      except ValueError:
-        if atLeast1 and firstError:
-          let eMsg = capitalize(getCurrentExceptionMsg()) &
-                     " for argument " & $(argumentIndex+1)
+      else:
+        if not (errorMsgs[high(errorMsgs)][0] == 'M'):
           errorMsgs.add(eMsg)
-        break
+    else:
+      var typeVar : t
+      var firstError = true
+      while true:
+        if argumentList.len == argumentIndex:
+          break
+        try:
+          let a = argumentList[argumentIndex]
+          inc(argumentIndex)
+          identifier.add(convert(a, typeVar))
+          firstError = false
+        except ValueError:
+          if atLeast1 and firstError:
+            let eMsg = capitalize(getCurrentExceptionMsg()) &
+                       " for argument " & $(argumentIndex+1)
+            errorMsgs.add(eMsg)
+          break
 
 
 template option*(identifier : expr, t : typeDesc, longName : string,
@@ -100,10 +109,12 @@ template option*(identifier : expr, t : typeDesc, longName : string,
   bind convert
   bind errorMsgs
   bind tables
+  bind inSubcommand
+  bind subcommandSelected
 
   var identifier : t
 
-  block:
+  if (inSubcommand and subcommandSelected) or not inSubcommand:
     var typeVar : t
     if tables.hasKey(longOptions, longName):
       try:
@@ -128,13 +139,33 @@ template exitoption*(longName, shortName, msg : string): stmt =
 
   if tables.hasKey(longOptions, longName):
     quit msg, QuitSuccess
-  elif tables.hasKey(shortOptions,  shortName):
+  elif tables.hasKey(shortOptions, shortName):
     quit msg, QuitSuccess
 
 
 template errormsg*(msg : string): stmt =
   bind customErrorMsg
   customErrorMsg = msg
+
+
+template subcommand*(identifier : expr, subcommandName : string, statements : stmt): stmt {.immediate.} =
+  bind argumentList
+  bind argumentIndex
+  bind errorMsgs
+  bind inSubcommand
+  bind subcommandSelected
+
+  var identifier : bool = false
+  inSubcommand = true
+
+  if argumentList.len > 0 and argumentList[0] == subcommandName:
+    identifier = true
+    inc(argumentIndex)
+    subcommandSelected = true
+
+  statements
+  subcommandSelected = false
+  inSubcommand = false
 
 
 template commandLine*(statements : stmt): stmt {.immediate.} =
