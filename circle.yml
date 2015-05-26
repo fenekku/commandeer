@@ -7,9 +7,9 @@ dependencies:
         - |
             if [ ! -x ${HOME}/nim/bin/nim ]; then
                 cd ${HOME}
-                wget --quiet http://builds.nim-lang.org/download/nim-0.10.2.tar.xz
+                wget --quiet http://builds.nim-lang.org/download/nim-0.11.2.tar.xz
                 mkdir nim/
-                tar xf nim-0.10.2.tar.xz --directory nim/ --strip-components=1
+                tar xf nim-0.11.2.tar.xz --directory nim/ --strip-components=1
                 cd nim/
                 ./build.sh
             fi
