@@ -1,6 +1,4 @@
 ## commandeer test file (it doubles as an example file too!)
-## When testing commandeer run it as follows on the command line:
-## ./testCommandeer 1 2.0 '?' --testing one two three -i:10
 
 import tables
 import unittest
@@ -9,15 +7,16 @@ import commandeer
 
 
 proc usage(): string =
-  result = "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <string>..."
+  result = "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <bool> <string>..."
 
 commandline:
   argument integer, int
   argument floatingPoint, float
   argument character, char
+  option testing, bool, "testing", "t" #option is placed here for testing purposes.
+  argument boolean, bool               #please don't do this for real
   arguments strings, string
   option optionalInteger, int, "int", "i"
-  option testing, bool, "testing", "t"
   exitoption "help", "h", usage()
   errormsg usage()
 
@@ -37,10 +36,10 @@ if testing:
   a["boo"] = 1
   check a["boo"] == 1
 
+  #Test all possible argument types
   check integer == 1
   check floatingPoint == 2.0
   check character == '?'
   check strings == @["one", "two", "three"]
   check optionalInteger == 10
-
-  echo "Tests pass!"
+  check boolean == false

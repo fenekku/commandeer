@@ -1,0 +1,32 @@
+machine:
+  environment:
+    PATH: ${HOME}/nim/bin:${HOME}/.nimble/bin:${PATH}
+
+dependencies:
+    pre:
+        - |
+            if [ ! -x ${HOME}/nim/bin/nim ]; then
+                cd ${HOME}
+                wget --quiet http://builds.nim-lang.org/download/nim-0.10.2.tar.xz
+                mkdir nim/
+                tar xf nim-0.10.2.tar.xz --directory nim/ --strip-components=1
+                cd nim/
+                ./build.sh
+            fi
+        - |
+            if [ ! -x ${HOME}/.nimble/bin/nimble ]; then
+                cd ${HOME}
+                git clone https://github.com/nim-lang/nimble.git
+                cd nimble
+                nim compile --run src/nimble install
+            fi
+
+    cache_directories:
+        - ~/nim/
+        - ~/.nimble/
+
+test:
+    pre:
+        - nimble install --accept
+    override:
+        - nim compile --run runTests.nim

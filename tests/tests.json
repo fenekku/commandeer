@@ -1,0 +1,44 @@
+{
+    "tests":
+        [
+            {
+                "test name": "Argument, option and arguments map correctly",
+                "file name": "testBasics",
+                "args": "1 2.0 ? -i:10 false one two three --testing",
+                "expect": 0
+            },
+            {
+                "test name": "Missing arguments echoes a message",
+                "file name": "testBasics",
+                "args": "1 2.0 ? -i:10 false --testing",
+                "expect": 1,
+                "msg": "Missing command line arguments\nUsage: program [--testing|--int=<int>|--help] <int> <float> <char> <bool> <string>...\n"
+            },
+            {
+                "test name": "Incorrect argument type echoes a message",
+                "file name": "testBasics",
+                "args": "1 2.0 ? one one two three",
+                "expect": 1,
+                "msg": "Cannot interpret as a bool: one for argument 4\nUsage: program [--testing|--int=<int>|--help] <int> <float> <char> <bool> <string>...\n"
+            },
+            {
+                "test name": "Exitoption ignores need for other arguments",
+                "file name": "testBasics",
+                "args": "--help",
+                "expect": 0,
+                "msg": "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <bool> <string>...\n"
+            },
+            {
+                "test name": "First exitoption counts",
+                "file name": "testBasics",
+                "args": "--testing --help",
+                "expect": 0
+            },
+            {
+                "test name": "Subcommands map correctly",
+                "file name": "testSubcommands",
+                "args": "add -f foo bar baz --testing",
+                "expect": 0
+            }
+        ]
+}

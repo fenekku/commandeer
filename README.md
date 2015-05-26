@@ -1,6 +1,8 @@
 Commandeer
 ==========
 
+[![Build Status](https://circleci.com/gh/fenekku/commandeer/tree/master.png?style=shield&circle-token=7697da2b7caad879ca17ab6ea7acf8729163a06b)](https://circleci.com/gh/fenekku/commandeer)
+
 Take command of your command line.
 
 Commandeer gets data from the command line to your variables and exits
@@ -63,9 +65,8 @@ command line arguments for fun!
 
 See the `tests` folder for other examples.
 
-That's all.
-
 It's not much and it doesn't pretend to be a magical experience.
+
 Although, it would be much cooler if it was.
 
 It should Just Work.
@@ -191,15 +192,11 @@ Design
   variables should be explicitly chosen by the developer.
 - Keep it simple and streamlined. Command line parsers can do a lot for
   you, but I prefer to be in adequate control.
+- Test in context. Tests are run on the installed package because that is what people get.
 
-In Trial
---------
-
-- subcommand syntax: I considered different variants and this one is being tried now. Suggest alternatives!
 
 TODO and Contribution
 ---------------------
 
 - subcommands testing in the wild
-- Better tests!
 - Use and see what needs to be added.
