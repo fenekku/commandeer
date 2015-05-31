@@ -11,24 +11,28 @@ for nimFile in walkDir("tests/"):
   if nimFile.kind == pcFile and nimFile.path.endswith(".nim"):
     compiled = execCmd("nim compile --verbosity:0 --hints:off --warnings:off " & nimFile.path)
     if compiled != 0:
-      break
+      echo "Could not compile " & nimFile.path
+      quit(QuitFailure)
 
 if compiled == 0:
   var j = parseFile("tests/tests.json")
-  var exitTuple : tuple[output: TaintedString, exitCode: int]
+  var exitTuple : tuple[output: string, exitCode: int]
+
   for jo in j["tests"].items():
     try:
       exitTuple = execCmdEx("tests" / jo["file name"].str & " " & jo["args"].str)
       doAssert(exitTuple.exitCode == jo["expect"].num)
-      if exitTuple.exitCode != 0:
+
+      if jo["msg"] != nil:
         doAssert(jo["msg"].str == exitTuple.output)
+
       write(stdout, ".")
     except:
       write(stdout, "F")
       echo ""
       echo "Test '", jo["test name"].str, "' failed."
-      echo "Expected: ", if jo["msg"] != nil: jo["msg"].str else: $jo["expect"].num
-      echo "Got: ", exitTuple.output
+      echo "Expected: ", if jo["msg"] != nil: repr(jo["msg"].str) else: $jo["expect"].num
+      echo "Got: ", repr(exitTuple.output)
       quit(QuitFailure)
 
   echo ""

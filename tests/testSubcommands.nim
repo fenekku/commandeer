@@ -1,6 +1,4 @@
 ## commandeer test file (it doubles as an example file too!)
-## When testing  run it as follows on the command line:
-##
 
 import unittest
 
@@ -49,9 +47,10 @@ else:
   echo("no subcommands have been chosen")
 
 if testing:
-  check add == true
-  check filenames == @["foo", "bar", "baz"]
-  check force == true
-  check interactive == false
-  check clone == false
-  check clean == false
+  doAssert(add == true)
+  doAssert(filenames == @["foo", "bar", "baz"])
+  doAssert(force == true)
+  doAssert(interactive == false)
+  doAssert(clone == false)
+  doAssert(clean == false)
+
