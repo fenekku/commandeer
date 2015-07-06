@@ -17,6 +17,7 @@ commandline:
   arguments strings, string
   option optionalInteger, int, "int", "i"
   exitoption "help", "h", usage()
+  exitoption "version", "v", "1.0.0"
   errormsg usage()
 
 echo("integer = ", integer)
@@ -25,7 +26,7 @@ echo("character = ", character)
 echo("strings (one or more) = ", strings)
 
 if optionalInteger != 0:
-  echo("optionalInteger = ", optionalInteger)
+  echo "optionalInteger = ", optionalInteger
 
 if testing:
   echo("Testing testCommandeer...")
@@ -36,9 +37,10 @@ if testing:
   doAssert(a["boo"] == 1)
 
   #Test all possible argument types
+  #use doAssert b/c of bug in unittest
   doAssert(integer == 1)
-  doassert(floatIngpoint == 2.0)
+  doAssert(floatingPoint == 2.0)
   doAssert(character == '?')
-  doassert(strings == @["one", "two", "three"])
-  doassert(optioNalinteger == 10)
-  doassert(boolean == false)
+  doAssert(strings == @["one", "two", "three"])
+  doAssert(optionalInteger == 10)
+  doAssert(boolean == false)
