@@ -35,7 +35,7 @@ proc convert(s : string, t : string): string =
     result = s.strip
 
 
-template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
+template argumentIMPL(identifier : expr, t : typeDesc): stmt {.immediate.} =
   bind argumentList
   bind argumentIndex
   bind convert
@@ -65,7 +65,8 @@ template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
     inc(argumentIndex)
 
 
-template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): stmt {.immediate.} =
+template argumentsIMPL(identifier : expr, t : typeDesc,
+                       atLeast1 : bool = true): stmt {.immediate.} =
   bind argumentList
   bind argumentIndex
   bind convert
@@ -102,8 +103,8 @@ template arguments*(identifier : expr, t : typeDesc, atLeast1 : bool = true): st
           break
 
 
-template option*(identifier : expr, t : typeDesc, longName : string,
-                 shortName : string): stmt {.immediate.} =
+template optionIMPL(identifier : expr, t : typeDesc, longName : string,
+                    shortName : string): stmt {.immediate.} =
   bind shortOptions
   bind longOptions
   bind convert
@@ -132,7 +133,7 @@ template option*(identifier : expr, t : typeDesc, longName : string,
         errorMsgs.add(eMsg)
 
 
-template exitoption*(longName, shortName, msg : string): stmt =
+template exitoptionIMPL(longName, shortName, msg : string): stmt =
   bind shortOptions
   bind longOptions
   bind tables
@@ -143,12 +144,13 @@ template exitoption*(longName, shortName, msg : string): stmt =
     quit msg, QuitSuccess
 
 
-template errormsg*(msg : string): stmt =
+template errormsgIMPL(msg : string): stmt =
   bind customErrorMsg
   customErrorMsg = msg
 
 
-template subcommand*(identifier : expr, subcommandName : string, statements : stmt): stmt {.immediate.} =
+template subcommandIMPL(identifier : expr, subcommandName : string,
+                        statements : stmt): stmt {.immediate.} =
   bind argumentList
   bind argumentIndex
   bind errorMsgs
@@ -177,6 +179,27 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
   bind tables
   bind customErrorMsg
 
+  template argument(identifier : expr, t : typeDesc): stmt {.immediate.} =
+    argumentIMPL(identifier, t)
+
+  template arguments(identifier : expr, t : typeDesc,
+                     atLeast1 : bool = true): stmt {.immediate.} =
+    argumentsIMPL(identifier, t, atLeast1)
+
+  template option(identifier : expr, t : typeDesc, longName : string,
+                  shortName : string): stmt {.immediate.} =
+    optionIMPL(identifier, t, longName, shortName)
+
+  template exitoption(longName, shortName, msg : string): stmt {.immediate.} =
+    exitoptionIMPL(longName, shortName, msg)
+
+  template errormsg(longName, shortName, msg : string): stmt {.immediate.} =
+    errormsgIMPL(longName, shortName, msg)
+
+  template subcommand(identifier : expr, subcommandName : string,
+                      statements : stmt): stmt {.immediate.} =
+    subcommandIMPL(identifier, subcommandName, statements)
+
   for kind, key, value in parseopt2.getopt():
     case kind
     of parseopt2.cmdArgument:
@@ -198,19 +221,16 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
 
 
 when isMainModule:
-  import unittest
+  var intVar : int
+  var floatVar : float
+  var boolVar : bool
+  var stringVar : string
+  var charVar : char
 
-  test "convert() returns converted type value from strings":
-    var intVar : int
-    var floatVar : float
-    var boolVar : bool
-    var stringVar : string
-    var charVar : char
-
-    check convert("10", intVar) == 10
-    check convert("10.0", floatVar) == 10
-    check convert("10", floatVar) == 10
-    check convert("yes", boolVar) == true
-    check convert("false", boolVar) == false
-    check convert("no ", stringVar) == "no"
-    check convert("*", charVar) == '*'
+  doassert(convert("10", intVar) == 10)
+  doassert(convert("10.0", floatVar) == 10)
+  doassert(convert("10", floatVar) == 10)
+  doassert(convert("yes", boolVar) == true)
+  doassert(convert("false", boolVar) == false)
+  doassert(convert("no ", stringVar) == "no")
+  doassert(convert("*", charVar) == '*')

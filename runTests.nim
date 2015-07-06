@@ -27,8 +27,8 @@ if compiled == 0:
       write(stdout, "F")
       echo ""
       echo "Test '", jo["test name"].str, "' failed."
-      echo "Expected: ", if jo["msg"] != nil: jo["msg"].str else: $jo["expect"].num
-      echo "Got: ", exitTuple.output
+      echo "Expected: ", if jo["msg"] != nil: repr(jo["msg"].str) else: $jo["expect"].num
+      echo "Got: ", repr(exitTuple.output)
       quit(QuitFailure)
 
   echo ""

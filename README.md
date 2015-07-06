@@ -192,7 +192,8 @@ Design
   variables should be explicitly chosen by the developer.
 - Keep it simple and streamlined. Command line parsers can do a lot for
   you, but I prefer to be in adequate control.
-- Test in context. Tests are run on the installed package because that is what people get.
+- Test in context. Continuous integration tests are run on the installed
+  package because that is what people get.
 
 
 TODO and Contribution

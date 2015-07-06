@@ -1,7 +1,6 @@
 ## commandeer test file (it doubles as an example file too!)
 
 import tables
-import unittest
 
 import commandeer
 
@@ -34,12 +33,12 @@ if testing:
   #Test that tables is not overwritten
   var a = tables.initTable[string, int]()
   a["boo"] = 1
-  check a["boo"] == 1
+  doAssert(a["boo"] == 1)
 
   #Test all possible argument types
-  check integer == 1
-  check floatingPoint == 2.0
-  check character == '?'
-  check strings == @["one", "two", "three"]
-  check optionalInteger == 10
-  check boolean == false
+  doAssert(integer == 1)
+  doassert(floatIngpoint == 2.0)
+  doAssert(character == '?')
+  doassert(strings == @["one", "two", "three"])
+  doassert(optioNalinteger == 10)
+  doassert(boolean == false)
