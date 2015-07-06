@@ -1,7 +1,8 @@
 ## commandeer test file (it doubles as an example file too!)
 
-import commandeer
+import unittest
 
+import commandeer
 
 proc usage(): string =
   result = "Usage: testSubCommands [--noop | --version] <COMMAND> [<OPTIONS>]"
@@ -20,6 +21,7 @@ commandline:
   exitoption "version", "v", "version 1.9.1"
   errormsg usage()
 
+
 if add:
   echo("add subcommand chosen")
   if not noOperation:
@@ -31,7 +33,6 @@ if add:
     write(stdout, " with force")
     if interactive:
       write(stdout, " and interaction")
-      echo ""
   elif interactive:
     write(stdout, " with interaction")
 
@@ -46,9 +47,10 @@ else:
   echo("no subcommands have been chosen")
 
 if testing:
-  doassert(add == true)
-  doassert(filenames == @["foo", "bar", "baz"])
-  doassert(force == true)
-  doassert(interactive == false)
-  doassert(clone == false)
-  doassert(clean == false)
+  doAssert(add == true)
+  doAssert(filenames == @["foo", "bar", "baz"])
+  doAssert(force == true)
+  doAssert(interactive == false)
+  doAssert(clone == false)
+  doAssert(clean == false)
+
