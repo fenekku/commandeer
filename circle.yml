@@ -27,7 +27,8 @@ dependencies:
 
 test:
     pre:
-        - nimble uninstall commandeer --accept
         - nimble install --accept
     override:
         - nim compile --run runTests.nim
+    post:
+        - nimble uninstall commandeer --accept
