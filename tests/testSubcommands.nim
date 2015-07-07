@@ -1,7 +1,5 @@
 ## commandeer test file (it doubles as an example file too!)
 
-import unittest
-
 import commandeer
 
 proc usage(): string =
