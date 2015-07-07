@@ -35,7 +35,7 @@ proc convert(s : string, t : string): string =
     result = s.strip
 
 
-template argument*(identifier : expr, t : typeDesc): stmt {.immediate.} =
+template argumentIMPL(identifier : expr, t : typeDesc): stmt {.immediate.} =
   bind argumentList
   bind argumentIndex
   bind convert
@@ -176,6 +176,9 @@ template commandLine*(statements : stmt): stmt {.immediate.} =
   bind parseopt2
   bind tables
   bind customErrorMsg
+
+  template argument(identifier : expr, t : typeDesc): stmt {.immediate.} =
+    argumentIMPL(identifier, t)
 
   for kind, key, value in parseopt2.getopt():
     case kind
