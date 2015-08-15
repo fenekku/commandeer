@@ -102,6 +102,38 @@ template argumentsIMPL(identifier : expr, t : typeDesc, atLeast1 : bool): stmt {
           break
 
 
+template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
+                           shortName : string, default : t): stmt {.immediate.} =
+  bind shortOptions
+  bind longOptions
+  bind convert
+  bind errorMsgs
+  bind tables
+  bind inSubcommand
+  bind subcommandSelected
+
+  var identifier : t
+
+  if (inSubcommand and subcommandSelected) or not inSubcommand:
+    var typeVar : t
+    if tables.hasKey(longOptions, longName):
+      try:
+        identifier = convert(tables.mget(longOptions, longName), typeVar)
+      except ValueError:
+        let eMsg = capitalize(getCurrentExceptionMsg()) &
+                   " for option --" & longName
+        errorMsgs.add(eMsg)
+    elif tables.hasKey(shortOptions, shortName):
+      try:
+        identifier = convert(tables.mget(shortOptions, shortName), typeVar)
+      except ValueError:
+        let eMsg = capitalize(getCurrentExceptionMsg()) &
+                   " for option -" & shortName
+        errorMsgs.add(eMsg)
+    else:
+      #default values
+      identifier = default
+
 template optionIMPL(identifier : expr, t : typeDesc, longName : string,
                     shortName : string): stmt {.immediate.} =
   bind shortOptions
@@ -130,7 +162,6 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option -" & shortName
         errorMsgs.add(eMsg)
-
 
 template exitoptionIMPL(longName, shortName, msg : string): stmt =
   bind shortOptions
@@ -184,7 +215,11 @@ template commandline*(statements : stmt): stmt {.immediate.} =
     argumentsIMPL(identifier, t, atLeast1)
 
   template option(identifier : expr, t : typeDesc, longName : string,
-                   shortName : string): stmt {.immediate.} =
+                  shortName : string, default : expr): stmt =
+    optionDefaultIMPL(identifier, t, longName, shortName, default)
+
+  template option(identifier : expr, t : typeDesc, longName : string,
+                  shortName : string): stmt =
     optionIMPL(identifier, t, longName, shortName)
 
   template exitoption(longName, shortName, msg : string): stmt =

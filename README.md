@@ -26,7 +26,7 @@ commandline:
   argument floatingPoint, float
   argument character, char
   arguments strings, string
-  option optionalInteger, int, "int", "i"
+  option optionalInteger, int, "int", "i", -1
   option testing, bool, "testing", "t"
   exitoption "help", "h",
              "Usage: myCLApp [--testing|--int=<int>|--help] " &
@@ -136,7 +136,7 @@ Correspondence works as follows: the first occurrence of `argument` corresponds
 to the first argument, the second to the second argument and so on.
 
 
-**arguments `identifier`, `type` `[, atLeast1]`**
+**arguments `identifier`, `type` [, `atLeast1`]**
 
 `arguments` declares a variable named `identifier` of type `seq[type]` initialized with
 the value of the sequential command line arguments that can be converted to type `type`.
@@ -149,12 +149,14 @@ the command line. The same applies to other situations where one type is
 a supertype of another type in terms of conversion e.g., floats eat ints.
 
 
-**option `identifier`, `type`, `long name`, `short name`**
+**option `identifier`, `type`, `long name`, `short name` [, `default`]**
 
 `option` declares a variable named `identifier` of type `type` initialized with
-the value of the corresponding command line option `--long name` or `-short name` converted to type `type`
-if it is present. The `--` and `-` are added by commandeer for your convenience.
-If the option is not present, `identifier` is initialized to its default type value.
+the value of the corresponding command line option `--long name` or `-short name`
+converted to type `type` if it is present. The `--` and `-` are added
+by commandeer for your convenience. If the option is not present,
+`identifier` is initialized to its default type value or the passed
+`default` value.
 
 The command line option syntax follows Nim's one i.e., `--times=3`, `--times:3`, `-t=3`, `-t:3` are all valid.
 
@@ -192,7 +194,8 @@ Design
   variables should be explicitly chosen by the developer.
 - Keep it simple and streamlined. Command line parsers can do a lot for
   you, but I prefer to be in adequate control.
-- Test in context. Tests are run on the installed package because that is what people get.
+- Test in context. Tests are run on the installed package because that
+  is what people get.
 
 
 TODO and Contribution

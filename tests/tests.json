@@ -33,6 +33,12 @@
                 "file name": "testSubcommands",
                 "args": "add -f foo bar baz --testing",
                 "expect": 0
+            },
+            {
+                "test name": "Default values work",
+                "file name": "testDefaultValues",
+                "args": "create --silly=false",
+                "expect": 0
             }
         ]
 }
