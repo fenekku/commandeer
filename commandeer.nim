@@ -46,7 +46,7 @@ template argumentIMPL(identifier : expr, t : typeDesc): stmt {.immediate.} =
   var identifier : t
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
-    if argumentList.len <= argumentIndex:
+    if len(argumentList) <= argumentIndex:
       let eMsg = "Missing command line arguments"
       if len(errorMsgs) == 0:
         errorMsgs.add(eMsg)
@@ -76,23 +76,26 @@ template argumentsIMPL(identifier : expr, t : typeDesc, atLeast1 : bool): stmt {
   var identifier = newSeq[t]()
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
-    if atLeast1 and (argumentList.len <= argumentIndex):
-      let eMsg = "Missing command line arguments"
-      if len(errorMsgs) == 0:
-        errorMsgs.add(eMsg)
-      else:
-        if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+    if len(argumentList) <= argumentIndex:
+      if atLeast1:
+        let eMsg = "Missing command line arguments"
+        if len(errorMsgs) == 0:
           errorMsgs.add(eMsg)
+        else:
+          if not (errorMsgs[high(errorMsgs)][0] == 'M'):
+            errorMsgs.add(eMsg)
+      else:
+        discard
     else:
       var typeVar : t
       var firstError = true
       while true:
-        if argumentList.len == argumentIndex:
+        if len(argumentList) == argumentIndex:
           break
         try:
-          let a = argumentList[argumentIndex]
+          let argument = argumentList[argumentIndex]
           inc(argumentIndex)
-          identifier.add(convert(a, typeVar))
+          identifier.add(convert(argument, typeVar))
           firstError = false
         except ValueError:
           if atLeast1 and firstError:
@@ -189,7 +192,7 @@ template subcommandIMPL(identifier : expr, subcommandName : string, stmts : stmt
   var identifier : bool = false
   inSubcommand = true
 
-  if argumentList.len > 0 and argumentList[0] == subcommandName:
+  if len(argumentList) > 0 and argumentList[0] == subcommandName:
     identifier = true
     inc(argumentIndex)
     subcommandSelected = true

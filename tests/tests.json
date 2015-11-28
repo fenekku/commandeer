@@ -39,6 +39,13 @@
                 "file name": "testDefaultValues",
                 "args": "create --silly=false",
                 "expect": 0
+            },
+            {
+                "test name": "Missing multiple arguments echoes a message",
+                "file name": "testMultipleArguments",
+                "args": "",
+                "expect": 1,
+                "msg": "Missing command line arguments\nYou made a mistake!\n"
             }
         ]
 }
