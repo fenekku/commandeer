@@ -121,14 +121,14 @@ template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
     var typeVar : t
     if tables.hasKey(longOptions, longName):
       try:
-        identifier = convert(tables.mget(longOptions, longName), typeVar)
+        identifier = convert(longOptions[longName], typeVar)
       except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option --" & longName
         errorMsgs.add(eMsg)
     elif tables.hasKey(shortOptions, shortName):
       try:
-        identifier = convert(tables.mget(shortOptions, shortName), typeVar)
+        identifier = convert(shortOptions[shortName], typeVar)
       except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option -" & shortName
@@ -153,14 +153,14 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
     var typeVar : t
     if tables.hasKey(longOptions, longName):
       try:
-        identifier = convert(tables.mget(longOptions, longName), typeVar)
+        identifier = convert(longOptions[longName], typeVar)
       except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option --" & longName
         errorMsgs.add(eMsg)
     elif tables.hasKey(shortOptions, shortName):
       try:
-        identifier = convert(tables.mget(shortOptions, shortName), typeVar)
+        identifier = convert(shortOptions[shortName], typeVar)
       except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option -" & shortName
