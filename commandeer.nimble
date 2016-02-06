@@ -1,6 +1,6 @@
 [Package]
 name        = "commandeer"
-version     = "0.10.0"
+version     = "0.10.1"
 author      = "Guillaume Viger"
 description = "A small command line parsing DSL"
 license     = "MIT"
@@ -8,4 +8,4 @@ license     = "MIT"
 InstallFiles = "commandeer.nim"
 
 [Deps]
-Requires: "nim >= 0.12.0"
+Requires: "nim >= 0.12.0 & < 0.14"

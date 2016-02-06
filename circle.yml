@@ -7,9 +7,9 @@ dependencies:
         - |
             if [ ! -x ${HOME}/nim/bin/nim ]; then
                 cd ${HOME}
-                wget --quiet http://builds.nim-lang.org/download/nim-0.12.0.tar.xz
+                wget --quiet http://builds.nim-lang.org/download/nim-0.13.0.tar.xz
                 mkdir nim/
-                tar xf nim-0.12.0.tar.xz --directory nim/ --strip-components=1
+                tar xf nim-0.13.0.tar.xz --directory nim/ --strip-components=1
                 cd nim/
                 ./build.sh
             fi
@@ -18,7 +18,6 @@ dependencies:
                 cd ${HOME}
                 git clone https://github.com/nim-lang/nimble.git
                 cd nimble
-                git checkout tags/v0.6.4
                 nim compile --run src/nimble install
             fi
 
