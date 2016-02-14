@@ -1,13 +1,13 @@
 
 import parseopt2
 import strutils
-import tables
+import strtabs
 
 
 var
   argumentList = newSeq[string]()
-  shortOptions = initTable[string, string](32)
-  longOptions = initTable[string, string](32)
+  shortOptions = newStringTable(modeCaseSensitive)
+  longOptions = newStringTable(modeCaseSensitive)
   argumentIndex = 0
   errorMsgs : seq[string] = @[]
   customErrorMsg : string
@@ -111,7 +111,7 @@ template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
   bind longOptions
   bind convert
   bind errorMsgs
-  bind tables
+  bind strtabs
   bind inSubcommand
   bind subcommandSelected
 
@@ -119,14 +119,14 @@ template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
     var typeVar : t
-    if tables.hasKey(longOptions, longName):
+    if strtabs.hasKey(longOptions, longName):
       try:
         identifier = convert(longOptions[longName], typeVar)
       except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option --" & longName
         errorMsgs.add(eMsg)
-    elif tables.hasKey(shortOptions, shortName):
+    elif strtabs.hasKey(shortOptions, shortName):
       try:
         identifier = convert(shortOptions[shortName], typeVar)
       except ValueError:
@@ -143,7 +143,7 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
   bind longOptions
   bind convert
   bind errorMsgs
-  bind tables
+  bind strtabs
   bind inSubcommand
   bind subcommandSelected
 
@@ -151,14 +151,14 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
     var typeVar : t
-    if tables.hasKey(longOptions, longName):
+    if strtabs.hasKey(longOptions, longName):
       try:
         identifier = convert(longOptions[longName], typeVar)
       except ValueError:
         let eMsg = capitalize(getCurrentExceptionMsg()) &
                    " for option --" & longName
         errorMsgs.add(eMsg)
-    elif tables.hasKey(shortOptions, shortName):
+    elif strtabs.hasKey(shortOptions, shortName):
       try:
         identifier = convert(shortOptions[shortName], typeVar)
       except ValueError:
@@ -169,17 +169,20 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
 template exitoptionIMPL(longName, shortName, msg : string): stmt =
   bind shortOptions
   bind longOptions
-  bind tables
+  bind strtabs
 
-  if tables.hasKey(longOptions, longName):
-    quit msg, QuitSuccess
-  elif tables.hasKey(shortOptions, shortName):
-    quit msg, QuitSuccess
+  if (inSubcommand and subcommandSelected) or not inSubcommand:
+    if strtabs.hasKey(longOptions, longName):
+      quit msg, QuitSuccess
+    elif strtabs.hasKey(shortOptions, shortName):
+      quit msg, QuitSuccess
 
 
 template errormsgIMPL(msg : string): stmt =
   bind customErrorMsg
-  customErrorMsg = msg
+
+  if (inSubcommand and subcommandSelected) or not inSubcommand:
+    customErrorMsg = msg
 
 
 template subcommandIMPL(identifier : expr, subcommandName : string, stmts : stmt): stmt {.immediate.} =
@@ -198,6 +201,7 @@ template subcommandIMPL(identifier : expr, subcommandName : string, stmts : stmt
     subcommandSelected = true
 
   stmts
+
   subcommandSelected = false
   inSubcommand = false
 
@@ -208,7 +212,7 @@ template commandline*(statements : stmt): stmt {.immediate.} =
   bind longOptions
   bind errorMsgs
   bind parseopt2
-  bind tables
+  bind strtabs
   bind customErrorMsg
 
   template argument(identifier : expr, t : typeDesc): stmt {.immediate.} =
@@ -239,9 +243,10 @@ template commandline*(statements : stmt): stmt {.immediate.} =
     of parseopt2.cmdArgument:
       argumentList.add(key)
     of parseopt2.cmdLongOption:
-      tables.add(longOptions, key, value)
+      longOptions[key] = value
     of parseopt2.cmdShortOption:
-      tables.add(shortOptions, key, value)
+      shortOptions[key] = value
+      # strtabs.add(shortOptions, key, value)
     else:
       discard
 

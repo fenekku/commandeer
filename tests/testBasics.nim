@@ -1,7 +1,5 @@
 ## commandeer test file (it doubles as an example file too!)
 
-import tables
-
 import commandeer
 
 
@@ -30,11 +28,6 @@ if optionalInteger != 0:
 
 if testing:
   echo("Testing testCommandeer...")
-
-  #Test that tables is not overwritten
-  var a = tables.initTable[string, int]()
-  a["boo"] = 1
-  doAssert(a["boo"] == 1)
 
   #Test all possible argument types
   #use doAssert b/c of bug in unittest
