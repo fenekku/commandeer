@@ -166,7 +166,15 @@ Syntactic sugar is provided for boolean options such that only the presence of t
 **exitoption `long name`, `short name`, `exit message`**
 
 `exitoption` declares a long and short option string for which the application
-will immediately output `exit message` and exit.
+will immediately output `exit message` and exit. This can be used for subcommand specific exit messages too:
+
+```nim
+commandline:
+  subcommand add, "add":
+    arguments filenames, string
+    exitoption "help", "h", "add help"
+  exitoption "help", "h", "general help"
+```
 
 This is mostly used for printing the version or the help message.
 
@@ -201,5 +209,4 @@ Design
 TODO and Contribution
 ---------------------
 
-- subcommands testing in the wild
 - Use and see what needs to be added.

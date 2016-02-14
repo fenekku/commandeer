@@ -10,13 +10,17 @@ commandline:
     arguments filenames, string
     option force, bool, "force", "f"
     option interactive, bool, "interactive", "i"
+    exitoption "help", "h", "add help"
   subcommand clone, "clone":
     argument gitUrl, string
+    exitoption "help", "h", "clone help"
   subcommand clean, "clean":
     option excludePattern, string, "exclude", "e"
+    exitoption "help", "h", "clean help"
   option noOperation, bool, "noop", "n"
   option testing, bool, "testing", "t"
   exitoption "version", "v", "version 1.9.1"
+  exitoption "help", "h", "general help"
   errormsg usage()
 
 
@@ -28,21 +32,21 @@ if add:
     echo("noOperation selected so not adding ", filenames)
 
   if force:
-    write(stdout, " with force")
+    echo " with force"
     if interactive:
-      write(stdout, " and interaction")
+      echo " and interaction"
   elif interactive:
-    write(stdout, " with interaction")
+    echo " with interaction"
 
 elif clone:
-  echo("clone subcommand chosen")
-  echo("cloning ", gitUrl, "...")
+  echo "clone subcommand chosen"
+  echo "cloning ", gitUrl, "..."
 
 elif clean:
-  echo("clean subcommand chosen")
+  echo "clean subcommand chosen"
 
 else:
-  echo("no subcommands have been chosen")
+  echo "no subcommands have been chosen"
 
 if testing:
   doAssert(add == true)

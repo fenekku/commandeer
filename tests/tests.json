@@ -29,6 +29,13 @@
                 "msg": "Usage: program [--testing|--int=<int>|--help] <int> <float> <char> <bool> <string>...\n"
             },
             {
+                "test name": "Subcommand exitoption is specific",
+                "file name": "testSubcommandsHelp",
+                "args": "add --help",
+                "expect": 0,
+                "msg": "add help\n"
+            },
+            {
                 "test name": "Subcommands map correctly",
                 "file name": "testSubcommands",
                 "args": "add -f foo bar baz --testing",
