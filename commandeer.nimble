@@ -1,11 +1,15 @@
-[Package]
-name        = "commandeer"
+# Package
+
 version     = "0.10.3"
 author      = "Guillaume Viger"
 description = "A small command line parsing DSL"
 license     = "MIT"
 
-InstallFiles = "commandeer.nim"
+installFiles = @["commandeer.nim"]
 
-[Deps]
-Requires: "nim >= 0.12.0 & < 0.14"
+# Dependencies
+
+requires "nim >= 0.14.0"
+
+task tests, "Run the Commandeer tester":
+  exec "nim c -r runTests"
