@@ -22,19 +22,14 @@ if compiled == 0:
     try:
       exitTuple = execCmdEx("tests" / jo["file name"].str & " " & jo["args"].str)
       doAssert(exitTuple.exitCode == jo["expect"].num)
-
-      try:
-        doAssert(jo["msg"].str == exitTuple.output)
-      except KeyError:
-        discard
-
+      if jo.hasKey("msg"): doAssert(jo["msg"].str == exitTuple.output)
       write(stdout, ".")
     except:
       write(stdout, "F")
       echo ""
       echo "Test '", jo["test name"].str, "' failed."
-      echo "Expected: ", try: repr(jo["msg"].str) except KeyError: $jo["expect"].num
-      echo "Got: ", repr(exitTuple.output)
+      echo "Expected: ", if jo.hasKey("msg"): repr(jo["msg"].str) else: $jo["expect"].num
+      echo "Got: ", if jo.hasKey("msg"): repr(exitTuple.output) else: $exitTuple.exitCode
       quit(QuitFailure)
 
   echo ""
