@@ -23,15 +23,17 @@ if compiled == 0:
       exitTuple = execCmdEx("tests" / jo["file name"].str & " " & jo["args"].str)
       doAssert(exitTuple.exitCode == jo["expect"].num)
 
-      if jo["msg"] != nil:
+      try:
         doAssert(jo["msg"].str == exitTuple.output)
+      except KeyError:
+        discard
 
       write(stdout, ".")
     except:
       write(stdout, "F")
       echo ""
       echo "Test '", jo["test name"].str, "' failed."
-      echo "Expected: ", if jo["msg"] != nil: repr(jo["msg"].str) else: $jo["expect"].num
+      echo "Expected: ", try: repr(jo["msg"].str) except KeyError: $jo["expect"].num
       echo "Got: ", repr(exitTuple.output)
       quit(QuitFailure)
 
