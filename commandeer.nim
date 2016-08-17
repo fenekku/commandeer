@@ -111,7 +111,7 @@ template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
   bind longOptions
   bind convert
   bind errorMsgs
-  bind strtabs
+  bind commandeer.strtabs
   bind inSubcommand
   bind subcommandSelected
 
@@ -143,7 +143,7 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
   bind longOptions
   bind convert
   bind errorMsgs
-  bind strtabs
+  bind commandeer.strtabs
   bind inSubcommand
   bind subcommandSelected
 
@@ -169,7 +169,7 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
 template exitoptionIMPL(longName, shortName, msg : string): stmt =
   bind shortOptions
   bind longOptions
-  bind strtabs
+  bind commandeer.strtabs
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
     if strtabs.hasKey(longOptions, longName):
@@ -211,8 +211,8 @@ template commandline*(statements : stmt): stmt {.immediate.} =
   bind shortOptions
   bind longOptions
   bind errorMsgs
-  bind parseopt2
-  bind strtabs
+  bind commandeer.parseopt2
+  bind commandeer.strtabs
   bind customErrorMsg
 
   template argument(identifier : expr, t : typeDesc): stmt {.immediate.} =
