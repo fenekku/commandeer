@@ -209,4 +209,6 @@ Design
 TODO and Contribution
 ---------------------
 
+- Space separated options
+- Multiple options
 - Use and see what needs to be added.

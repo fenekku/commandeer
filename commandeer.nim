@@ -35,13 +35,7 @@ proc convert(s : string, t : string): string =
     result = s.strip
 
 
-template argumentIMPL(identifier : expr, t : typeDesc): stmt {.immediate.} =
-  bind argumentList
-  bind argumentIndex
-  bind convert
-  bind errorMsgs
-  bind inSubcommand
-  bind subcommandSelected
+template argumentIMPL(identifier : untyped, t : typeDesc): untyped =
 
   var identifier : t
 
@@ -65,13 +59,7 @@ template argumentIMPL(identifier : expr, t : typeDesc): stmt {.immediate.} =
     inc(argumentIndex)
 
 
-template argumentsIMPL(identifier : expr, t : typeDesc, atLeast1 : bool): stmt {.immediate.} =
-  bind argumentList
-  bind argumentIndex
-  bind convert
-  bind errorMsgs
-  bind inSubcommand
-  bind subcommandSelected
+template argumentsIMPL(identifier : untyped, t : typeDesc, atLeast1 : bool): untyped =
 
   var identifier = newSeq[t]()
 
@@ -105,15 +93,8 @@ template argumentsIMPL(identifier : expr, t : typeDesc, atLeast1 : bool): stmt {
           break
 
 
-template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
-                           shortName : string, default : t): stmt {.immediate.} =
-  bind shortOptions
-  bind longOptions
-  bind convert
-  bind errorMsgs
-  bind commandeer.strtabs
-  bind inSubcommand
-  bind subcommandSelected
+template optionDefaultIMPL(identifier : untyped, t : typeDesc, longName : string,
+                           shortName : string, default : t): untyped =
 
   var identifier : t
 
@@ -137,15 +118,9 @@ template optionDefaultIMPL(identifier : expr, t : typeDesc, longName : string,
       #default values
       identifier = default
 
-template optionIMPL(identifier : expr, t : typeDesc, longName : string,
-                    shortName : string): stmt {.immediate.} =
-  bind shortOptions
-  bind longOptions
-  bind convert
-  bind errorMsgs
-  bind commandeer.strtabs
-  bind inSubcommand
-  bind subcommandSelected
+
+template optionIMPL(identifier : untyped, t : typeDesc, longName : string,
+                    shortName : string): untyped =
 
   var identifier : t
 
@@ -166,10 +141,7 @@ template optionIMPL(identifier : expr, t : typeDesc, longName : string,
                    " for option -" & shortName
         errorMsgs.add(eMsg)
 
-template exitoptionIMPL(longName, shortName, msg : string): stmt =
-  bind shortOptions
-  bind longOptions
-  bind commandeer.strtabs
+template exitoptionIMPL(longName, shortName, msg : string): untyped =
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
     if strtabs.hasKey(longOptions, longName):
@@ -178,19 +150,13 @@ template exitoptionIMPL(longName, shortName, msg : string): stmt =
       quit msg, QuitSuccess
 
 
-template errormsgIMPL(msg : string): stmt =
-  bind customErrorMsg
+template errormsgIMPL(msg : string): untyped =
 
   if (inSubcommand and subcommandSelected) or not inSubcommand:
     customErrorMsg = msg
 
 
-template subcommandIMPL(identifier : expr, subcommandName : string, stmts : stmt): stmt {.immediate.} =
-  bind argumentList
-  bind argumentIndex
-  bind errorMsgs
-  bind inSubcommand
-  bind subcommandSelected
+template subcommandIMPL(identifier : untyped, subcommandName : string, stmts : untyped): untyped =
 
   var identifier : bool = false
   inSubcommand = true
@@ -206,36 +172,29 @@ template subcommandIMPL(identifier : expr, subcommandName : string, stmts : stmt
   inSubcommand = false
 
 
-template commandline*(statements : stmt): stmt {.immediate.} =
-  bind argumentList
-  bind shortOptions
-  bind longOptions
-  bind errorMsgs
-  bind commandeer.parseopt2
-  bind commandeer.strtabs
-  bind customErrorMsg
+template commandline*(statements : untyped): untyped =
 
-  template argument(identifier : expr, t : typeDesc): stmt {.immediate.} =
+  template argument(identifier : untyped, t : typeDesc): untyped =
     argumentIMPL(identifier, t)
 
-  template arguments(identifier : expr, t : typeDesc, atLeast1 : bool = true): stmt {.immediate.} =
+  template arguments(identifier : untyped, t : typeDesc, atLeast1 : bool = true): untyped =
     argumentsIMPL(identifier, t, atLeast1)
 
-  template option(identifier : expr, t : typeDesc, longName : string,
-                  shortName : string, default : expr): stmt =
+  template option(identifier : untyped, t : typeDesc, longName : string,
+                  shortName : string, default : untyped): untyped =
     optionDefaultIMPL(identifier, t, longName, shortName, default)
 
-  template option(identifier : expr, t : typeDesc, longName : string,
-                  shortName : string): stmt =
+  template option(identifier : untyped, t : typeDesc, longName : string,
+                  shortName : string): untyped =
     optionIMPL(identifier, t, longName, shortName)
 
-  template exitoption(longName, shortName, msg : string): stmt =
+  template exitoption(longName, shortName, msg : string): untyped =
     exitoptionIMPL(longName, shortName, msg)
 
-  template errormsg(msg : string): stmt =
+  template errormsg(msg : string): untyped =
     errormsgIMPL(msg)
 
-  template subcommand(identifier : expr, subcommandName : string, stmts : stmt): stmt {.immediate.} =
+  template subcommand(identifier : untyped, subcommandName : string, stmts : untyped): untyped =
     subcommandIMPL(identifier, subcommandName, stmts)
 
   for kind, key, value in parseopt2.getopt():
@@ -246,7 +205,6 @@ template commandline*(statements : stmt): stmt {.immediate.} =
       longOptions[key] = value
     of parseopt2.cmdShortOption:
       shortOptions[key] = value
-      # strtabs.add(shortOptions, key, value)
     else:
       discard
 
