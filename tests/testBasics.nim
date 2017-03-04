@@ -1,5 +1,4 @@
 ## commandeer test file (it doubles as an example file too!)
-
 import commandeer
 
 
@@ -27,8 +26,6 @@ if optionalInteger != 0:
   echo "optionalInteger = ", optionalInteger
 
 if testing:
-  echo("Testing testCommandeer...")
-
   #Test all possible argument types
   #use doAssert b/c of bug in unittest
   doAssert(integer == 1)
