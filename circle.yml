@@ -1,22 +1,16 @@
-machine:
-  environment:
-    PATH: ${HOME}/nim/bin:${PATH}
 
 dependencies:
     pre:
         - |
-            if [ ! -x ${HOME}/nim/bin/nim ]; then
-                cd ${HOME}
-                wget --quiet http://builds.nim-lang.org/download/nim-0.16.0.tar.xz
-                tar xf nim-0.16.0.tar.xz
-                mv nim-0.16.0 nim
-                cd nim/
-                sh build.sh
-                nim c koch
-                ./koch tools
+            if [ ! -x ${HOME}/nim-debs ]; then
+                mkdir ${HOME}/nim-debs
+                cd ${HOME}/nim-debs
+                wget http://http.us.debian.org/debian/pool/main/n/nim/nim_0.16.0-1_amd64.deb
+                wget http://http.us.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2k-1_amd64.deb
             fi
+            sudo dpkg --install ${HOME}/nim-debs/*_amd64.deb
     cache_directories:
-        - ~/nim/
+        - ~/nim-debs
 
 test:
     pre:

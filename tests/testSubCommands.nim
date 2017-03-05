@@ -2,38 +2,46 @@
 
 import commandeer
 
+
 proc usage(): string =
-  result = "Usage: testSubCommandsHelp [--help|--testing|--version] <COMMAND> [<COMMAND OPTIONS>]"
+  result = "Usage: testSubCommands [--noop | --version] <COMMAND> [<OPTIONS>]"
 
 commandline:
   subcommand add, "add":
     arguments filenames, string
     option force, bool, "force", "f"
+    option interactive, bool, "interactive", "i"
     exitoption "help", "h", "add help"
   subcommand clone, "clone":
     argument gitUrl, string
     exitoption "help", "h", "clone help"
-  subcommand clean, "clean":
-    exitoption "help", "h", "clean help"
   option testing, bool, "testing", "t"
-  exitoption "version", "v", "version 1.9.1"
-  exitoption "help", "h", usage()
+  exitoption "help", "h", "general help"
   errormsg usage()
 
 
 if add:
-  echo "add subcommand chosen"
-  write(stdout, "adding", filenames)
+  echo("adding ", filenames)
 
   if force:
-    write(stdout, " with force")
+    echo " with force"
+    if interactive:
+      echo " and interaction"
+  elif interactive:
+    echo " with interaction"
 
 elif clone:
   echo "clone subcommand chosen"
   echo "cloning ", gitUrl, "..."
 
-elif clean:
-  echo "clean subcommand chosen"
-
 else:
   echo "no subcommands have been chosen"
+
+if testing:
+  doAssert(add == true)
+  doAssert(filenames == @["foo", "bar", "baz"])
+  doAssert(force == true)
+  doAssert(interactive == false)
+  doAssert(clone == false)
+else:
+  doAssert(false)

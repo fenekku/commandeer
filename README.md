@@ -65,11 +65,7 @@ command line arguments for fun!
 
 See the `tests` folder for other examples.
 
-It's not much and it doesn't pretend to be a magical experience.
-
-Although, it would be much cooler if it was.
-
-It should Just Work.
+It doesn't seek to do too much; it just does what's needed.
 
 
 Installation
@@ -102,7 +98,8 @@ Documentation
 
 `commandline` is used to delimit the space where you define the command line
 arguments and options you expect. All other commandeer constructs (described below)
-are placed under it. They are all optional - although you probably want to use at least one, right?
+are placed under it. They are all optional - although you probably want to use
+at least one, right?
 
 **subcommand `identifier`, `name`**
 
@@ -158,9 +155,11 @@ by commandeer for your convenience. If the option is not present,
 `identifier` is initialized to its default type value or the passed
 `default` value.
 
-The command line option syntax follows Nim's one i.e., `--times=3`, `--times:3`, `-t=3`, `-t:3` are all valid.
+The command line option syntax follows Nim's one and adds space (!) i.e.,
+`--times=3`, `--times:3`, `-t=3`, `-t:3`, `--times 3` and `-t 3` are all valid.
 
-Syntactic sugar is provided for boolean options such that only the presence of the option is needed to give a true value.
+Syntactic sugar is provided for boolean options such that only the presence of
+the option is needed to give a true value.
 
 
 **exitoption `long name`, `short name`, `exit message`**
@@ -186,11 +185,7 @@ This is mostly used for printing the version or the help message.
 
 **Valid types for `type` are:**
 
-- pre-defined integer
-- pre-defined floating point
-- string
-- boolean
-- character
+- `int`, `float`, `string`, `bool`, `char`
 
 
 Design
@@ -209,6 +204,5 @@ Design
 TODO and Contribution
 ---------------------
 
-- Space separated options
 - Multiple options
 - Use and see what needs to be added.

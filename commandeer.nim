@@ -1,236 +1,299 @@
-
+import algorithm
 import parseopt2
+import sequtils
 import strutils
-import strtabs
+import tables
+import typetraits
 
 
-var
-  argumentList = newSeq[string]()
-  shortOptions = newStringTable(modeCaseSensitive)
-  longOptions = newStringTable(modeCaseSensitive)
-  argumentIndex = 0
-  errorMsgs : seq[string] = @[]
-  customErrorMsg : string
-  inSubcommand = false
-  subcommandSelected = false
+type
+  assignmentProc = proc(value: string)
+  Quantifier {.pure.} = enum
+    single, oneOrMore, zeroOrMore
+  Assigner = tuple[assign: assignmentProc, quantity: Quantifier]
+  # Only allow one level of CommandLineMapping, so no recursion
+  CommandLineMapping = ref object
+    assigners: seq[Assigner]
+    shortOptions: TableRef[string, assignmentProc]
+    longOptions: TableRef[string, assignmentProc]
+    activate: proc()
+
+var errorMessage: string = ""
+var subCommands = newTable[string, CommandLineMapping]()
+var currentMapping: CommandLineMapping
 
 
-## String conversion
-proc convert(s : string, t : char): char =
-  result = s[0]
-proc convert(s : string, t : int): int =
-  result = parseInt(s)
-proc convert(s : string, t : float): float =
-  result = parseFloat(s)
-proc convert(s : string, t : bool): bool =
+## Debugging, conversion and utility procs
+
+proc `$`*(f: assignmentProc): string = "assignmentProc"
+
+
+proc `$`*(clm: CommandLineMapping): string =
+  result = "{" &
+    "assigners: " & $clm.assigners & ", " &
+    "shorts: " & $clm.shortOptions & ", " &
+    "longs: " & $clm.longOptions &
+    "}"
+
+proc assignConversion(variable: var int, value: string) =
+  variable = strutils.parseInt(value)
+
+
+proc assignConversion(variable: var seq[int], value: string) =
+  variable.add(strutils.parseInt(value))
+
+
+proc assignConversion(variable: var float, value: string) =
+  variable = strutils.parseFloat(value)
+
+
+proc assignConversion(variable: var seq[float], value: string) =
+  variable.add(strutils.parseFloat(value))
+
+
+proc assignConversion(variable: var string, value: string) =
+  if value == "": raise newException(ValueError, "Empty string")
+  variable = value
+
+
+proc assignConversion(variable: var seq[string], value: string) =
+  variable.add(value)
+
+
+proc assignConversion(variable: var bool, value: string) =
   ## will accept "yes", "true" as true values
-  if s == "":
-    ## the only way we get an empty string here is because of a key
-    ## with no value, in which case the presence of the key is enough
-    ## to return true
-    result = true
+  ## the only way we get an empty string here is because of a key
+  ## with no value, in which case the presence of the key is enough
+  ## to return true
+  variable = if value == "": true else: strutils.parseBool(value)
+
+
+proc assignConversion(variable: var seq[bool], value: string) =
+  variable.add(if value == "": true else: strutils.parseBool(value))
+
+
+proc assignConversion(variable: var char, value: string) =
+  if value == "": raise newException(ValueError, "Empty string")
+  variable = value[0]
+
+
+proc assignConversion(variable: var seq[char], value: string) =
+  variable.add(value[0])
+
+
+proc exitWithErrorMessage(msg="") =
+  if msg != "" and errorMessage != "":
+    quit msg & "\n" & errorMessage, QuitFailure
+  elif msg != "":
+    quit msg, QuitFailure
+  elif errorMessage != "":
+    quit errorMessage, QuitFailure
   else:
-    result = parseBool(s)
-proc convert(s : string, t : string): string =
-    result = s.strip
+    quit QuitFailure
 
 
-template argumentIMPL(identifier : untyped, t : typeDesc): untyped =
+proc getOptionAssignment(key: string): assignmentProc =
+  var tmpMapping = currentMapping
+  var optionAssignmentProcs: TableRef[string, assignmentProc]
 
-  var identifier : t
-
-  if (inSubcommand and subcommandSelected) or not inSubcommand:
-    if len(argumentList) <= argumentIndex:
-      let eMsg = "Missing command line arguments"
-      if len(errorMsgs) == 0:
-        errorMsgs.add(eMsg)
-      else:
-        if not (errorMsgs[high(errorMsgs)][0] == 'M'):
-          errorMsgs.add(eMsg)
+  while not tmpMapping.isNil and optionAssignmentProcs.isNil:
+    if key in tmpMapping.longOptions:
+      optionAssignmentProcs = tmpMapping.longOptions
+    elif key in tmpMapping.shortOptions:
+      optionAssignmentProcs = tmpMapping.shortOptions
     else:
-      var typeVar : t
+      if tmpMapping == subcommands[""]:
+        tmpMapping = nil
+      else:
+        tmpMapping = subcommands[""]
+
+  if tmpMapping.isNil:
+    return nil
+  else:
+    return optionAssignmentProcs[key]
+
+
+## Interpretation of the tokens
+proc interpretCLI(cliTokens: var seq[GetoptResult]) =
+  var argumentIndex = 0
+  currentMapping = subCommands[""]
+
+  while len(cliTokens) > 0:
+    var token = cliTokens.pop()
+    if token.kind in [parseopt2.cmdLongOption, parseopt2.cmdShortOption]:
+      var assign = getOptionAssignment(token.key)
+
+      if assign.isNil:
+        # Ignore superfluous extra option
+        continue
+
       try:
-        identifier = convert(argumentList[argumentIndex], typeVar)
+        assign(token.val)
       except ValueError:
-        let eMsg = capitalize(getCurrentExceptionMsg()) &
-                   " for argument " & $(argumentIndex+1)
-        errorMsgs.add(eMsg)
-
-    inc(argumentIndex)
-
-
-template argumentsIMPL(identifier : untyped, t : typeDesc, atLeast1 : bool): untyped =
-
-  var identifier = newSeq[t]()
-
-  if (inSubcommand and subcommandSelected) or not inSubcommand:
-    if len(argumentList) <= argumentIndex:
-      if atLeast1:
-        let eMsg = "Missing command line arguments"
-        if len(errorMsgs) == 0:
-          errorMsgs.add(eMsg)
+        if token.val != "":
+          exitWithErrorMessage(getCurrentExceptionMsg())
+        if len(cliTokens) > 0:
+          # There might be a space separating key and value
+          # The value is the next token
+          var nextToken = cliTokens.pop()
+          if nextToken.kind == parseopt2.cmdArgument:
+            try:
+              assign(nextToken.key)
+            except ValueError:
+              exitWithErrorMessage(getCurrentExceptionMsg())
+          else:
+            cliTokens.add(nextToken)
+            exitWithErrorMessage("Missing value for option '" & token.key & "'")
         else:
-          if not (errorMsgs[high(errorMsgs)][0] == 'M'):
-            errorMsgs.add(eMsg)
-      else:
-        discard
-    else:
-      var typeVar : t
-      var firstError = true
-      while true:
-        if len(argumentList) == argumentIndex:
-          break
-        try:
-          let argument = argumentList[argumentIndex]
-          inc(argumentIndex)
-          identifier.add(convert(argument, typeVar))
-          firstError = false
-        except ValueError:
-          if atLeast1 and firstError:
-            let eMsg = capitalize(getCurrentExceptionMsg()) &
-                       " for argument " & $(argumentIndex+1)
-            errorMsgs.add(eMsg)
-          break
+          exitWithErrorMessage("Missing value for option '" & token.key & "'")
 
+    elif token.kind == parseopt2.cmdArgument:
+      # Activate subcommand and continue interpreting after
+      if argumentIndex == 0 and token.key in subcommands:
+        currentMapping = subcommands[token.key]
+        currentMapping.activate()
+        continue
 
-template optionDefaultIMPL(identifier : untyped, t : typeDesc, longName : string,
-                           shortName : string, default : t): untyped =
+      # Ignore superfluous extra arguments
+      if argumentIndex >= len(currentMapping.assigners):
+        continue
 
-  var identifier : t
+      # Deal with regular argument
+      var assigner = currentMapping.assigners[argumentIndex]
+      var atLeastOneAssignment = false
+      var nextToken: GetoptResult
 
-  if (inSubcommand and subcommandSelected) or not inSubcommand:
-    var typeVar : t
-    if strtabs.hasKey(longOptions, longName):
       try:
-        identifier = convert(longOptions[longName], typeVar)
+        assigner.assign(token.key)  # key is the value for cmdArgument
+        atLeastOneAssignment = true
+
+        if assigner.quantity in [Quantifier.zeroOrMore, Quantifier.oneOrMore]:
+          while len(cliTokens) > 0:  # broken by emptiness, conversion, option
+            nextToken = cliTokens.pop()
+            # echo "nextToken ", nextToken
+            if nextToken.kind != parseopt2.cmdArgument:
+              cliTokens.add(nextToken)
+              break
+            assigner.assign(nextToken.key)
       except ValueError:
-        let eMsg = capitalize(getCurrentExceptionMsg()) &
-                   " for option --" & longName
-        errorMsgs.add(eMsg)
-    elif strtabs.hasKey(shortOptions, shortName):
+        case assigner.quantity
+        of Quantifier.single:
+          exitWithErrorMessage(getCurrentExceptionMsg())
+        of Quantifier.zeroOrMore:
+          if atLeastOneAssignment:
+            cliTokens.add(nextToken)
+          else:
+            cliTokens.add(token)
+        of Quantifier.oneOrMore:
+          if atLeastOneAssignment:
+            cliTokens.add(nextToken)
+          else:
+            exitWithErrorMessage(getCurrentExceptionMsg())
+
+      inc(argumentIndex)
+
+  if argumentIndex < len(currentMapping.assigners):
+    exitWithErrorMessage("Missing command line arguments")
+
+
+## Command line dsl keywords ##
+
+template argument*(identifier: untyped, t: typeDesc): untyped =
+  var identifier: t
+  currentMapping.assigners.add((
+    proc(value: string) {.closure.} =
       try:
-        identifier = convert(shortOptions[shortName], typeVar)
+        assignConversion(identifier, value)
       except ValueError:
-        let eMsg = capitalize(getCurrentExceptionMsg()) &
-                   " for option -" & shortName
-        errorMsgs.add(eMsg)
-    else:
-      #default values
-      identifier = default
+        raise newException(
+          ValueError,
+          "Couldn't convert '" & value & "' to " & name(t)
+        )
+    ,
+    Quantifier.single
+  ))
 
 
-template optionIMPL(identifier : untyped, t : typeDesc, longName : string,
-                    shortName : string): untyped =
-
-  var identifier : t
-
-  if (inSubcommand and subcommandSelected) or not inSubcommand:
-    var typeVar : t
-    if strtabs.hasKey(longOptions, longName):
+template arguments*(identifier: untyped, t: typeDesc, atLeast1: bool=true): untyped =
+  var identifier = newSeq[t]()
+  currentMapping.assigners.add((
+    proc(value: string) {.closure.} =
       try:
-        identifier = convert(longOptions[longName], typeVar)
+        assignConversion(identifier, value)
       except ValueError:
-        let eMsg = capitalize(getCurrentExceptionMsg()) &
-                   " for option --" & longName
-        errorMsgs.add(eMsg)
-    elif strtabs.hasKey(shortOptions, shortName):
-      try:
-        identifier = convert(shortOptions[shortName], typeVar)
-      except ValueError:
-        let eMsg = capitalize(getCurrentExceptionMsg()) &
-                   " for option -" & shortName
-        errorMsgs.add(eMsg)
-
-template exitoptionIMPL(longName, shortName, msg : string): untyped =
-
-  if (inSubcommand and subcommandSelected) or not inSubcommand:
-    if strtabs.hasKey(longOptions, longName):
-      quit msg, QuitSuccess
-    elif strtabs.hasKey(shortOptions, shortName):
-      quit msg, QuitSuccess
+        raise newException(
+          ValueError,
+          "Couldn't convert '" & value & "' to " & name(t)
+        )
+    ,
+    if atLeast1: Quantifier.oneOrMore else: Quantifier.zeroOrMore
+  ))
 
 
-template errormsgIMPL(msg : string): untyped =
-
-  if (inSubcommand and subcommandSelected) or not inSubcommand:
-    customErrorMsg = msg
-
-
-template subcommandIMPL(identifier : untyped, subcommandName : string, stmts : untyped): untyped =
-
-  var identifier : bool = false
-  inSubcommand = true
-
-  if len(argumentList) > 0 and argumentList[0] == subcommandName:
-    identifier = true
-    inc(argumentIndex)
-    subcommandSelected = true
-
-  stmts
-
-  subcommandSelected = false
-  inSubcommand = false
+template option*(identifier: untyped, t: typeDesc, long, short: string,
+                 default: t): untyped =
+  var identifier: t = default
+  var assignment = proc(value: string) =
+    try:
+      assignConversion(identifier, value)
+    except ValueError:
+      raise newException(
+        ValueError,
+        "Couldn't convert '" & value & "' to " & name(t)
+      )
+  currentMapping.longOptions[long] = assignment
+  currentMapping.shortOptions[short] = assignment
 
 
-template commandline*(statements : untyped): untyped =
+template option*(identifier: untyped, t: typeDesc, long, short: string): untyped =
+  var identifier: t
+  var assignment = proc(value: string) =
+    try:
+      assignConversion(identifier, value)
+    except ValueError:
+      raise newException(
+        ValueError,
+        "Couldn't convert '" & value & "' to " & name(t)
+      )
+  currentMapping.longOptions[long] = assignment
+  currentMapping.shortOptions[short] = assignment
 
-  template argument(identifier : untyped, t : typeDesc): untyped =
-    argumentIMPL(identifier, t)
 
-  template arguments(identifier : untyped, t : typeDesc, atLeast1 : bool = true): untyped =
-    argumentsIMPL(identifier, t, atLeast1)
+template exitoption*(long, short, msg: string): untyped =
+  var exiter = proc(value: string) =
+    quit msg, QuitSuccess
+  currentMapping.longOptions[long] = exiter
+  currentMapping.shortOptions[short] = exiter
 
-  template option(identifier : untyped, t : typeDesc, longName : string,
-                  shortName : string, default : untyped): untyped =
-    optionDefaultIMPL(identifier, t, longName, shortName, default)
 
-  template option(identifier : untyped, t : typeDesc, longName : string,
-                  shortName : string): untyped =
-    optionIMPL(identifier, t, longName, shortName)
+template errormsg*(msg: string): untyped =
+  errorMessage = msg
 
-  template exitoption(longName, shortName, msg : string): untyped =
-    exitoptionIMPL(longName, shortName, msg)
 
-  template errormsg(msg : string): untyped =
-    errormsgIMPL(msg)
+template subcommand*(identifier: untyped, subcommandName: string,
+                    statements: untyped): untyped =
+    var identifier: bool = false
+    subCommands[subcommandName] = CommandLineMapping(
+      assigners: newSeq[Assigner](),
+      shortOptions: newTable[string, assignmentProc](),
+      longOptions: newTable[string, assignmentProc](),
+      activate: proc() =
+        identifier = true
+    )
+    currentMapping = subCommands[subcommandName]
+    statements
+    currentMapping = subCommands[""]
 
-  template subcommand(identifier : untyped, subcommandName : string, stmts : untyped): untyped =
-    subcommandIMPL(identifier, subcommandName, stmts)
 
-  for kind, key, value in parseopt2.getopt():
-    case kind
-    of parseopt2.cmdArgument:
-      argumentList.add(key)
-    of parseopt2.cmdLongOption:
-      longOptions[key] = value
-    of parseopt2.cmdShortOption:
-      shortOptions[key] = value
-    else:
-      discard
-
-  #Call the passed statements so that the above templates are called
+template commandline*(statements: untyped): untyped =
+  var cliTokens = reversed(toSeq(parseopt2.getopt()))
+  var defaultMapping = CommandLineMapping(
+    assigners: newSeq[Assigner](),
+    shortOptions: newTable[string, assignmentProc](),
+    longOptions: newTable[string, assignmentProc](),
+    activate: proc() = discard
+  )
+  subCommands[""] = defaultMapping
+  currentMapping = defaultMapping
   statements
-
-  if len(errorMsgs) > 0:
-    if not customErrorMsg.isNil:
-      errorMsgs.add(customErrorMsg)
-    quit join(errorMsgs, "\n")
-
-
-when isMainModule:
-  import unittest
-
-  test "convert() returns converted type value from strings":
-    var intVar : int
-    var floatVar : float
-    var boolVar : bool
-    var stringVar : string
-    var charVar : char
-
-    check convert("10", intVar) == 10
-    check convert("10.0", floatVar) == 10
-    check convert("10", floatVar) == 10
-    check convert("yes", boolVar) == true
-    check convert("false", boolVar) == false
-    check convert("no ", stringVar) == "no"
-    check convert("*", charVar) == '*'
+  interpretCLI(cliTokens)
