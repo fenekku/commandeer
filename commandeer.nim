@@ -284,6 +284,26 @@ template subcommand*(identifier: untyped, subcommandName: string,
     statements
     currentMapping = subCommands[""]
 
+template subcommand*(identifier: untyped, subcommandNames: openArray[string],
+                    statements: untyped): untyped =
+  var identifier: bool = false
+  var namesOfSubcommands = @subcommandNames
+  var aSubcommandName = namesOfSubcommands.pop()
+  subCommands[aSubcommandName] = CommandLineMapping(
+    assigners: newSeq[Assigner](),
+    shortOptions: newTable[string, assignmentProc](),
+    longOptions: newTable[string, assignmentProc](),
+    activate: proc() =
+    identifier = true
+  )
+  currentMapping = subCommands[aSubcommandName]
+  statements
+  currentMapping = subCommands[""]
+  if len(namesOfSubcommands) > 0:
+    for subcommandName in namesOfSubcommands:
+      subCommands[subcommandName] = subCommands[aSubcommandName]
+
+
 
 template commandline*(statements: untyped): untyped =
   var cliTokens = reversed(toSeq(parseopt2.getopt()))
