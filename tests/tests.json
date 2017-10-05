@@ -1,12 +1,12 @@
 {
     "tests":
         [
-            {
+            /*{
                 "test name": "Argument, option and arguments map correctly",
                 "file name": "testBasics",
                 "args": "1 2.0 '?' -i:10 false one two three --testing",
                 "expect": 0
-            },
+            },*/
             {
                 "test name": "Exitoption ignores need for other arguments",
                 "file name": "testBasics",
@@ -26,6 +26,19 @@
                 "file name": "testSubCommands",
                 "args": "add -f foo bar baz --testing",
                 "expect": 0
+            },
+            {
+                "test name": "Subcommands with name and alias map correctly",
+                "file name": "testSubCommands",
+                "args": "a -f foo bar baz --testing",
+                "expect": 0
+            },
+            {
+                "test name": "Subcommands with an array of aliases map correctly",
+                "file name": "testSubCommands",
+                "args": "p",
+                "expect": 0,
+                "msg": "push subcommand chosen\npushing...\n"
             },
             {
                 "test name": "Default values work",

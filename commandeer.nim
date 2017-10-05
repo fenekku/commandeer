@@ -270,22 +270,25 @@ template errormsg*(msg: string): untyped =
   errorMessage = msg
 
 
-template subcommand*(identifier: untyped, subcommandName: string,
-                    statements: untyped): untyped =
-    var identifier: bool = false
-    subCommands[subcommandName] = CommandLineMapping(
-      assigners: newSeq[Assigner](),
-      shortOptions: newTable[string, assignmentProc](),
-      longOptions: newTable[string, assignmentProc](),
-      activate: proc() =
-        identifier = true
-    )
-    currentMapping = subCommands[subcommandName]
-    statements
-    currentMapping = subCommands[""]
+#[#old implementation of subcommand
+  
+  template subcommand*(identifier: untyped, subcommandName: string,
+                     statements: untyped): untyped =
+  var identifier: bool = false
+  subCommands[subcommandName] = CommandLineMapping(
+    assigners: newSeq[Assigner](),
+    shortOptions: newTable[string, assignmentProc](),
+    longOptions: newTable[string, assignmentProc](),
+    activate: proc() =
+      identifier = true
+  )
+  currentMapping = subCommands[subcommandName]
+  statements
+  currentMapping = subCommands[""]
+  ]#
 
-template subcommand*(identifier: untyped, subcommandNames: openArray[string],
-                    statements: untyped): untyped =
+template subcommand*(identifier: untyped, subcommandNames: varargs[string],
+                     statements: untyped): untyped =
   var identifier: bool = false
   var namesOfSubcommands = @subcommandNames
   var aSubcommandName = namesOfSubcommands.pop()

@@ -101,10 +101,10 @@ arguments and options you expect. All other commandeer constructs (described bel
 are placed under it. They are all optional - although you probably want to use
 at least one, right?
 
-**subcommand `identifier`, `name`** or **subcommand `identifier`,`names`**
+**subcommand `identifier`, `name`[, `alias1`, `alias2`...]**
 
 `subcommand` declares `identifier` to be a variable of type `bool` that is `true`
-if the first command line argument passed is `name`(or is one of `names`) and is `false` otherwise.
+if the first command line argument passed is `name` or one of the aliases (`alias1`, `alias2`, etc.) and is `false` otherwise.
 After it, you define the subcommand arguments and options you expect.
 All other commandeer constructs (described below) *can be* placed under it.
 
@@ -112,7 +112,7 @@ For example:
 
 ```nim
 commandline:
-  subcommand add, "add":
+  subcommand add, "add", "a":
     arguments filenames, string
     option force, bool, "force", "f"
   option globalOption, bool, "global", "g"
