@@ -1,12 +1,12 @@
 {
     "tests":
         [
-            /*{
+            {
                 "test name": "Argument, option and arguments map correctly",
                 "file name": "testBasics",
                 "args": "1 2.0 '?' -i:10 false one two three --testing",
                 "expect": 0
-            },*/
+            },
             {
                 "test name": "Exitoption ignores need for other arguments",
                 "file name": "testBasics",
@@ -36,7 +36,7 @@
             {
                 "test name": "Subcommands with an array of aliases map correctly",
                 "file name": "testSubCommands",
-                "args": "p",
+                "args": "p --testing",
                 "expect": 0,
                 "msg": "push subcommand chosen\npushing...\n"
             },

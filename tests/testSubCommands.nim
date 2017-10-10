@@ -44,10 +44,13 @@ else:
   echo "no subcommands have been chosen"
 
 if testing:
-  doAssert(add == true)
-  doAssert(filenames == @["foo", "bar", "baz"])
-  doAssert(force == true)
-  doAssert(interactive == false)
-  doAssert(clone == false)
+  if add:
+    doAssert(filenames == @["foo", "bar", "baz"])
+    doAssert(force == true)
+    doAssert(interactive == false)
+    doAssert(clone == false)
+  else:
+    doAssert(push == true)
+
 else:
   doAssert(false)
