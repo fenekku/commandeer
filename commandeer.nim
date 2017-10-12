@@ -270,19 +270,42 @@ template errormsg*(msg: string): untyped =
   errorMessage = msg
 
 
-template subcommand*(identifier: untyped, subcommandName: string,
-                    statements: untyped): untyped =
-    var identifier: bool = false
-    subCommands[subcommandName] = CommandLineMapping(
-      assigners: newSeq[Assigner](),
-      shortOptions: newTable[string, assignmentProc](),
-      longOptions: newTable[string, assignmentProc](),
-      activate: proc() =
-        identifier = true
-    )
-    currentMapping = subCommands[subcommandName]
-    statements
-    currentMapping = subCommands[""]
+#[#old implementation of subcommand
+  
+  template subcommand*(identifier: untyped, subcommandName: string,
+                     statements: untyped): untyped =
+  var identifier: bool = false
+  subCommands[subcommandName] = CommandLineMapping(
+    assigners: newSeq[Assigner](),
+    shortOptions: newTable[string, assignmentProc](),
+    longOptions: newTable[string, assignmentProc](),
+    activate: proc() =
+      identifier = true
+  )
+  currentMapping = subCommands[subcommandName]
+  statements
+  currentMapping = subCommands[""]
+  ]#
+
+template subcommand*(identifier: untyped, subcommandNames: varargs[string],
+                     statements: untyped): untyped =
+  var identifier: bool = false
+  var namesOfSubcommands = @subcommandNames
+  var aSubcommandName = namesOfSubcommands.pop()
+  subCommands[aSubcommandName] = CommandLineMapping(
+    assigners: newSeq[Assigner](),
+    shortOptions: newTable[string, assignmentProc](),
+    longOptions: newTable[string, assignmentProc](),
+    activate: proc() =
+    identifier = true
+  )
+  currentMapping = subCommands[aSubcommandName]
+  statements
+  currentMapping = subCommands[""]
+  if len(namesOfSubcommands) > 0:
+    for subcommandName in namesOfSubcommands:
+      subCommands[subcommandName] = subCommands[aSubcommandName]
+
 
 
 template commandline*(statements: untyped): untyped =

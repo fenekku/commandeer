@@ -7,7 +7,7 @@ proc usage(): string =
   result = "Usage: testSubCommands [--noop | --version] <COMMAND> [<OPTIONS>]"
 
 commandline:
-  subcommand add, "add":
+  subcommand add, "add", "a":
     arguments filenames, string
     option force, bool, "force", "f"
     option interactive, bool, "interactive", "i"
@@ -15,6 +15,8 @@ commandline:
   subcommand clone, "clone":
     argument gitUrl, string
     exitoption "help", "h", "clone help"
+  subcommand push, ["push", "p","theoppositeofpull"]:
+    exitoption "help", "h", "push help"
   option testing, bool, "testing", "t"
   exitoption "help", "h", "general help"
   errormsg usage()
@@ -34,14 +36,21 @@ elif clone:
   echo "clone subcommand chosen"
   echo "cloning ", gitUrl, "..."
 
+elif push:
+  echo "push subcommand chosen"
+  echo "pushin ..."
+
 else:
   echo "no subcommands have been chosen"
 
 if testing:
-  doAssert(add == true)
-  doAssert(filenames == @["foo", "bar", "baz"])
-  doAssert(force == true)
-  doAssert(interactive == false)
-  doAssert(clone == false)
+  if add:
+    doAssert(filenames == @["foo", "bar", "baz"])
+    doAssert(force == true)
+    doAssert(interactive == false)
+    doAssert(clone == false)
+  else:
+    doAssert(push == true)
+
 else:
   doAssert(false)
