@@ -1,0 +1,18 @@
+version: 2
+jobs:
+    build:
+        docker:
+            - image: nimlang/nim  # got all the building libraries
+
+        steps:
+            - checkout
+
+            - run: echo $PATH
+
+            - run: nim --version
+
+            - run: nimble --version
+
+            - run: nimble install --accept
+
+            - run: nimble tests
