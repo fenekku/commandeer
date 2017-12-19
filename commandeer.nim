@@ -11,7 +11,8 @@ type
   Quantifier {.pure.} = enum
     single, oneOrMore, zeroOrMore
   Assigner = tuple[assign: assignmentProc, quantity: Quantifier]
-  # Only allow one level of CommandLineMapping, so no recursion
+  # We only allow one level of CommandLineMapping, so not
+  # a recursive definition
   CommandLineMapping = ref object
     assigners: seq[Assigner]
     shortOptions: TableRef[string, assignmentProc]
@@ -170,7 +171,6 @@ proc interpretCLI(cliTokens: var seq[GetoptResult]) =
         if assigner.quantity in [Quantifier.zeroOrMore, Quantifier.oneOrMore]:
           while len(cliTokens) > 0:  # broken by emptiness, conversion, option
             nextToken = cliTokens.pop()
-            # echo "nextToken ", nextToken
             if nextToken.kind != parseopt2.cmdArgument:
               cliTokens.add(nextToken)
               break
@@ -192,8 +192,11 @@ proc interpretCLI(cliTokens: var seq[GetoptResult]) =
 
       inc(argumentIndex)
 
+  # Maybe didn't process all arguments
   if argumentIndex < len(currentMapping.assigners):
-    exitWithErrorMessage("Missing command line arguments")
+    let lastAssigner = currentMapping.assigners[argumentIndex]
+    if not(lastAssigner.quantity == Quantifier.zeroOrMore):
+      exitWithErrorMessage("Missing command line arguments")
 
 
 ## Command line dsl keywords ##
@@ -216,18 +219,20 @@ template argument*(identifier: untyped, t: typeDesc): untyped =
 
 template arguments*(identifier: untyped, t: typeDesc, atLeast1: bool=true): untyped =
   var identifier = newSeq[t]()
-  currentMapping.assigners.add((
-    proc(value: string) {.closure.} =
-      try:
-        assignConversion(identifier, value)
-      except ValueError:
-        raise newException(
-          ValueError,
-          "Couldn't convert '" & value & "' to " & name(t)
-        )
-    ,
-    if atLeast1: Quantifier.oneOrMore else: Quantifier.zeroOrMore
-  ))
+  currentMapping.assigners.add(
+    (
+      proc(value: string) {.closure.} =
+        try:
+          assignConversion(identifier, value)
+        except ValueError:
+          raise newException(
+            ValueError,
+            "Couldn't convert '" & value & "' to " & name(t)
+          )
+      ,
+      if atLeast1: Quantifier.oneOrMore else: Quantifier.zeroOrMore
+    )
+  )
 
 
 template option*(identifier: untyped, t: typeDesc, long, short: string,
@@ -270,23 +275,6 @@ template errormsg*(msg: string): untyped =
   errorMessage = msg
 
 
-#[#old implementation of subcommand
-  
-  template subcommand*(identifier: untyped, subcommandName: string,
-                     statements: untyped): untyped =
-  var identifier: bool = false
-  subCommands[subcommandName] = CommandLineMapping(
-    assigners: newSeq[Assigner](),
-    shortOptions: newTable[string, assignmentProc](),
-    longOptions: newTable[string, assignmentProc](),
-    activate: proc() =
-      identifier = true
-  )
-  currentMapping = subCommands[subcommandName]
-  statements
-  currentMapping = subCommands[""]
-  ]#
-
 template subcommand*(identifier: untyped, subcommandNames: varargs[string],
                      statements: untyped): untyped =
   var identifier: bool = false
@@ -305,7 +293,6 @@ template subcommand*(identifier: untyped, subcommandNames: varargs[string],
   if len(namesOfSubcommands) > 0:
     for subcommandName in namesOfSubcommands:
       subCommands[subcommandName] = subCommands[aSubcommandName]
-
 
 
 template commandline*(statements: untyped): untyped =

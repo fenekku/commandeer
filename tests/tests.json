@@ -79,6 +79,12 @@
                 "args": "1 --fraction abc",
                 "expect": 1,
                 "msg": "Couldn't convert 'abc' to float\nUsage: <numbers: int...> [--fraction|-f: float] [--testing]\n"
+            },
+            {
+                "test name": "Multiple arguments declared without minimum doesn't echo a message",
+                "file name": "testMultiple",
+                "args": "",
+                "expect": 0,
             }
         ]
 }

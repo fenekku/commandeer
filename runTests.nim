@@ -29,7 +29,7 @@ if compiled == 0:
       echo ""
       echo "Test '", jo["test name"].str, "' failed."
       echo "Expected: ", if jo.hasKey("msg"): repr(jo["msg"].str) else: $jo["expect"].num
-      echo "Got: ", if jo.hasKey("msg"): repr(exitTuple.output) else: $exitTuple.exitCode
+      echo "Got: ", repr(exitTuple.output)
       quit(QuitFailure)
 
   echo ""
