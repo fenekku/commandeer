@@ -11,30 +11,45 @@ type
   Quantifier {.pure.} = enum
     single, oneOrMore, zeroOrMore
   Assigner = tuple[assign: assignmentProc, quantity: Quantifier]
-  # We only allow one level of CommandLineMapping, so not
+  # We only allow one level of SubCommand, so not
   # a recursive definition
-  CommandLineMapping = ref object
-    assigners: seq[Assigner]
-    shortOptions: TableRef[string, assignmentProc]
-    longOptions: TableRef[string, assignmentProc]
+  SubCommand = ref object
+    argumentAssigners: seq[Assigner]
+    index: int
+    shortOptionAssigners: TableRef[string, assignmentProc]
+    longOptionAssigners: TableRef[string, assignmentProc]
     activate: proc()
 
+
+proc newSubCommand(p: proc() = proc()=discard): SubCommand =
+  new(result)
+  result.argumentAssigners = newSeq[Assigner]()
+  result.index = 0
+  result.shortOptionAssigners = newTable[string, assignmentProc]()
+  result.longOptionAssigners = newTable[string, assignmentProc]()
+  result.activate = p  # proc() = discard
+
+
 var errorMessage: string = ""
-var subCommands = newTable[string, CommandLineMapping]()
-var currentMapping: CommandLineMapping
+var currentSubCommand = newSubCommand()
+var subCommands = newTable[string, SubCommand]()
+subCommands[""] = currentSubCommand
+var cliTokens: seq[GetoptResult]
 
 
-## Debugging, conversion and utility procs
+## Debugging, conversion and utility procs ##
 
-proc `$`*(f: assignmentProc): string = "assignmentProc"
+# proc `$`*(f: assignmentProc): string = "assignmentProc"
 
 
-proc `$`*(clm: CommandLineMapping): string =
-  result = "{" &
-    "assigners: " & $clm.assigners & ", " &
-    "shorts: " & $clm.shortOptions & ", " &
-    "longs: " & $clm.longOptions &
-    "}"
+# proc `$`*(s: SubCommand): string =
+#   result =
+#     "{" &
+#     "argumentAssigners: " & $s.argumentAssigners & ", " &
+#     "shorts: " & $s.shortOptionAssigners & ", " &
+#     "longs: " & $s.longOptionAssigners &
+#     "}"
+
 
 proc assignConversion(variable: var int, value: string) =
   variable = strutils.parseInt(value)
@@ -62,7 +77,7 @@ proc assignConversion(variable: var seq[string], value: string) =
 
 
 proc assignConversion(variable: var bool, value: string) =
-  ## will accept "yes", "true" as true values
+  ## will accept "yes", "true", "on", "1" as true values
   ## the only way we get an empty string here is because of a key
   ## with no value, in which case the presence of the key is enough
   ## to return true
@@ -94,34 +109,120 @@ proc exitWithErrorMessage(msg="") =
 
 
 proc getOptionAssignment(key: string): assignmentProc =
-  var tmpMapping = currentMapping
+  var tmpSubCommand = currentSubCommand
   var optionAssignmentProcs: TableRef[string, assignmentProc]
 
-  while not tmpMapping.isNil and optionAssignmentProcs.isNil:
-    if key in tmpMapping.longOptions:
-      optionAssignmentProcs = tmpMapping.longOptions
-    elif key in tmpMapping.shortOptions:
-      optionAssignmentProcs = tmpMapping.shortOptions
+  while not tmpSubCommand.isNil and optionAssignmentProcs.isNil:
+    if key in tmpSubCommand.longOptionAssigners:
+      optionAssignmentProcs = tmpSubCommand.longOptionAssigners
+    elif key in tmpSubCommand.shortOptionAssigners:
+      optionAssignmentProcs = tmpSubCommand.shortOptionAssigners
     else:
-      if tmpMapping == subcommands[""]:
-        tmpMapping = nil
+      if tmpSubCommand == subcommands[""]:
+        tmpSubCommand = nil
       else:
-        tmpMapping = subcommands[""]
+        tmpSubCommand = subcommands[""]
 
-  if tmpMapping.isNil:
+  if tmpSubCommand.isNil:
     return nil
   else:
     return optionAssignmentProcs[key]
 
 
-## Interpretation of the tokens
-proc interpretCLI(cliTokens: var seq[GetoptResult]) =
-  var argumentIndex = 0
-  currentMapping = subCommands[""]
+## Interpretation of the tokens  ##
 
-  while len(cliTokens) > 0:
-    var token = cliTokens.pop()
-    if token.kind in [parseopt2.cmdLongOption, parseopt2.cmdShortOption]:
+type
+  CmdTokenKind {.pure.} = enum
+    argument, option, subcommand, empty
+  CmdToken = tuple
+    getOptResult: GetoptResult
+    kind: CmdTokenKind
+
+
+proc key(cmdToken: CmdToken): string =
+  return cmdToken.getOptResult.key
+
+
+proc value(cmdToken: CmdToken): string =
+  if cmdToken.kind == CmdTokenKind.argument:
+    # key is the value for cmdArgument
+    return cmdToken.getOptResult.key
+  return cmdToken.getOptResult.val
+
+
+proc obtainCmdToken(consume: bool): CmdToken =
+  if cliTokens.len() > 0:
+    let cliToken = if consume: cliTokens.pop() else: cliTokens[^1]
+    if currentSubCommand.index == 0 and cliToken.key in subcommands:
+      return (getOptResult: cliToken, kind: CmdTokenKind.subcommand)
+    elif cliToken.kind in [parseopt2.cmdLongOption, parseopt2.cmdShortOption]:
+      return (getOptResult: cliToken, kind: CmdTokenKind.option)
+    else:
+      return (getOptResult: cliToken, kind: CmdTokenKind.argument)
+  return (getOptResult: (kind: CmdLineKind.cmdEnd, key: "", val: ""), kind: CmdTokenKind.empty)
+
+
+proc readCmdToken(): CmdToken =
+  return obtainCmdToken(consume=true)
+
+
+proc peekCmdToken(): CmdToken =
+  return obtainCmdToken(consume=false)
+
+
+proc addToken(token: CmdToken) =
+  cliTokens.add(token.getOptResult)
+
+
+proc interpretCli() =
+  while true:
+    var token = readCmdToken()
+
+    case token.kind
+    of CmdTokenKind.empty:
+      # If didn't fulfill required arguments
+      if currentSubCommand.index < len(currentSubCommand.argumentAssigners):
+        let last = high(currentSubCommand.argumentAssigners)
+        for assigner in currentSubCommand.argumentAssigners[currentSubCommand.index..last]:
+          if assigner.quantity != Quantifier.zeroOrMore:
+            exitWithErrorMessage("Missing command line arguments")
+      break
+
+    of CmdTokenKind.subcommand:
+      currentSubCommand = subcommands[token.key]
+      currentSubCommand.activate()
+
+    of CmdTokenKind.argument:
+      # Ignore superfluous extra arguments
+      if currentSubCommand.index >= len(currentSubCommand.argumentAssigners):
+        continue
+
+      var assigner = currentSubCommand.argumentAssigners[currentSubCommand.index]
+      var atLeastOneAssignment = false
+
+      try:
+        assigner.assign(token.value)
+        atLeastOneAssignment = true
+
+        # arguments?
+        if assigner.quantity in [Quantifier.zeroOrMore, Quantifier.oneOrMore]:
+          # broken by emptiness, conversion, option
+          while peekCmdToken().kind == CmdTokenKind.argument:
+            token = readCmdToken()
+            assigner.assign(token.value)
+      except ValueError:
+        case assigner.quantity
+        of Quantifier.zeroOrMore:
+          addToken(token)
+        of Quantifier.single, Quantifier.oneOrMore:
+          if atLeastOneAssignment:
+            addToken(token)
+          else:
+            exitWithErrorMessage(getCurrentExceptionMsg())
+
+      inc(currentSubCommand.index)
+
+    of CmdTokenKind.option:
       var assign = getOptionAssignment(token.key)
 
       if assign.isNil:
@@ -129,81 +230,28 @@ proc interpretCLI(cliTokens: var seq[GetoptResult]) =
         continue
 
       try:
-        assign(token.val)
+        assign(token.value)
       except ValueError:
-        if token.val != "":
-          exitWithErrorMessage(getCurrentExceptionMsg())
-        if len(cliTokens) > 0:
+        if peekCmdToken().kind == CmdTokenKind.argument:
           # There might be a space separating key and value
           # The value is the next token
-          var nextToken = cliTokens.pop()
-          if nextToken.kind == parseopt2.cmdArgument:
-            try:
-              assign(nextToken.key)
-            except ValueError:
-              exitWithErrorMessage(getCurrentExceptionMsg())
-          else:
-            cliTokens.add(nextToken)
-            exitWithErrorMessage("Missing value for option '" & token.key & "'")
+          token = readCmdToken()
+          try:
+            assign(token.value)
+          except ValueError:
+            exitWithErrorMessage(getCurrentExceptionMsg())
+        elif token.value != "":
+          exitWithErrorMessage(getCurrentExceptionMsg())
         else:
           exitWithErrorMessage("Missing value for option '" & token.key & "'")
 
-    elif token.kind == parseopt2.cmdArgument:
-      # Activate subcommand and continue interpreting after
-      if argumentIndex == 0 and token.key in subcommands:
-        currentMapping = subcommands[token.key]
-        currentMapping.activate()
-        continue
-
-      # Ignore superfluous extra arguments
-      if argumentIndex >= len(currentMapping.assigners):
-        continue
-
-      # Deal with regular argument
-      var assigner = currentMapping.assigners[argumentIndex]
-      var atLeastOneAssignment = false
-      var nextToken: GetoptResult
-
-      try:
-        assigner.assign(token.key)  # key is the value for cmdArgument
-        atLeastOneAssignment = true
-
-        if assigner.quantity in [Quantifier.zeroOrMore, Quantifier.oneOrMore]:
-          while len(cliTokens) > 0:  # broken by emptiness, conversion, option
-            nextToken = cliTokens.pop()
-            if nextToken.kind != parseopt2.cmdArgument:
-              cliTokens.add(nextToken)
-              break
-            assigner.assign(nextToken.key)
-      except ValueError:
-        case assigner.quantity
-        of Quantifier.single:
-          exitWithErrorMessage(getCurrentExceptionMsg())
-        of Quantifier.zeroOrMore:
-          if atLeastOneAssignment:
-            cliTokens.add(nextToken)
-          else:
-            cliTokens.add(token)
-        of Quantifier.oneOrMore:
-          if atLeastOneAssignment:
-            cliTokens.add(nextToken)
-          else:
-            exitWithErrorMessage(getCurrentExceptionMsg())
-
-      inc(argumentIndex)
-
-  # Maybe didn't process all arguments
-  if argumentIndex < len(currentMapping.assigners):
-    let lastAssigner = currentMapping.assigners[argumentIndex]
-    if not(lastAssigner.quantity == Quantifier.zeroOrMore):
-      exitWithErrorMessage("Missing command line arguments")
 
 
 ## Command line dsl keywords ##
 
 template argument*(identifier: untyped, t: typeDesc): untyped =
   var identifier: t
-  currentMapping.assigners.add((
+  currentSubCommand.argumentAssigners.add((
     proc(value: string) {.closure.} =
       try:
         assignConversion(identifier, value)
@@ -219,7 +267,7 @@ template argument*(identifier: untyped, t: typeDesc): untyped =
 
 template arguments*(identifier: untyped, t: typeDesc, atLeast1: bool=true): untyped =
   var identifier = newSeq[t]()
-  currentMapping.assigners.add(
+  currentSubCommand.argumentAssigners.add(
     (
       proc(value: string) {.closure.} =
         try:
@@ -246,8 +294,8 @@ template option*(identifier: untyped, t: typeDesc, long, short: string,
         ValueError,
         "Couldn't convert '" & value & "' to " & name(t)
       )
-  currentMapping.longOptions[long] = assignment
-  currentMapping.shortOptions[short] = assignment
+  currentSubCommand.longOptionAssigners[long] = assignment
+  currentSubCommand.shortOptionAssigners[short] = assignment
 
 
 template option*(identifier: untyped, t: typeDesc, long, short: string): untyped =
@@ -260,15 +308,15 @@ template option*(identifier: untyped, t: typeDesc, long, short: string): untyped
         ValueError,
         "Couldn't convert '" & value & "' to " & name(t)
       )
-  currentMapping.longOptions[long] = assignment
-  currentMapping.shortOptions[short] = assignment
+  currentSubCommand.longOptionAssigners[long] = assignment
+  currentSubCommand.shortOptionAssigners[short] = assignment
 
 
 template exitoption*(long, short, msg: string): untyped =
   var exiter = proc(value: string) =
     quit msg, QuitSuccess
-  currentMapping.longOptions[long] = exiter
-  currentMapping.shortOptions[short] = exiter
+  currentSubCommand.longOptionAssigners[long] = exiter
+  currentSubCommand.shortOptionAssigners[short] = exiter
 
 
 template errormsg*(msg: string): untyped =
@@ -278,32 +326,17 @@ template errormsg*(msg: string): untyped =
 template subcommand*(identifier: untyped, subcommandNames: varargs[string],
                      statements: untyped): untyped =
   var identifier: bool = false
-  var namesOfSubcommands = @subcommandNames
-  var aSubcommandName = namesOfSubcommands.pop()
-  subCommands[aSubcommandName] = CommandLineMapping(
-    assigners: newSeq[Assigner](),
-    shortOptions: newTable[string, assignmentProc](),
-    longOptions: newTable[string, assignmentProc](),
-    activate: proc() =
-    identifier = true
-  )
-  currentMapping = subCommands[aSubcommandName]
+  var thisSubCommand = newSubCommand(proc() = identifier = true)
+
+  currentSubCommand = thisSubCommand
   statements
-  currentMapping = subCommands[""]
-  if len(namesOfSubcommands) > 0:
-    for subcommandName in namesOfSubcommands:
-      subCommands[subcommandName] = subCommands[aSubcommandName]
+  currentSubCommand = subCommands[""]
+
+  for subcommandName in subcommandNames:
+    subCommands[subcommandName] = thisSubCommand
 
 
 template commandline*(statements: untyped): untyped =
-  var cliTokens = reversed(toSeq(parseopt2.getopt()))
-  var defaultMapping = CommandLineMapping(
-    assigners: newSeq[Assigner](),
-    shortOptions: newTable[string, assignmentProc](),
-    longOptions: newTable[string, assignmentProc](),
-    activate: proc() = discard
-  )
-  subCommands[""] = defaultMapping
-  currentMapping = defaultMapping
+  cliTokens = reversed(toSeq(parseopt2.getopt()))
   statements
-  interpretCLI(cliTokens)
+  interpretCli()

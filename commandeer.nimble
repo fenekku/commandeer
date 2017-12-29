@@ -1,6 +1,6 @@
 # Package
 
-version     = "0.12.1"
+version     = "0.12.2"
 author      = "Guillaume Viger"
 description = "A small command line parsing DSL"
 license     = "MIT"

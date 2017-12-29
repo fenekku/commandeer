@@ -201,8 +201,15 @@ Design
   is what people get.
 
 
+Tests
+-----
+
+Run the test suite:
+
+  nimble tests
+
 TODO and Contribution
 ---------------------
 
-- Multiple options
-- Use and see what needs to be added.
+- Fix global argument(s) bug
+- Use and see what needs to be added

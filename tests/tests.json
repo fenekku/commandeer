@@ -81,10 +81,18 @@
                 "msg": "Couldn't convert 'abc' to float\nUsage: <numbers: int...> [--fraction|-f: float] [--testing]\n"
             },
             {
-                "test name": "Multiple arguments declared without minimum doesn't echo a message",
-                "file name": "testMultiple",
+                "test name": "Missing arguments for arguments template without atLeast1 doesn't echo a message",
+                "file name": "testOptionalMultiple",
                 "args": "",
                 "expect": 0,
+            },
+            {
+                "test name": "Missing required argument after optional arguments echoes a message",
+                "file name": "testMultiple",
+                "args": "",
+                "expect": 1,
+                "msg": "Missing command line arguments\n"
             }
+
         ]
 }
