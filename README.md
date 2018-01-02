@@ -210,7 +210,7 @@ Tests
 
 Run the test suite:
 
-  nimble tests
+    nimble tests
 
 TODO and Contribution
 ---------------------
