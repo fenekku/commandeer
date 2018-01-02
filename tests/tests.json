@@ -24,13 +24,13 @@
             {
                 "test name": "Subcommands map correctly",
                 "file name": "testSubCommands",
-                "args": "add -f foo bar baz --testing",
+                "args": "add -f clone bar baz --testing",
                 "expect": 0
             },
             {
                 "test name": "Subcommands with name and alias map correctly",
                 "file name": "testSubCommands",
-                "args": "a -f foo bar baz --testing",
+                "args": "a -f clone bar baz --testing",
                 "expect": 0
             },
             {
@@ -93,6 +93,5 @@
                 "expect": 1,
                 "msg": "Missing command line arguments\n"
             }
-
         ]
 }

@@ -105,7 +105,7 @@ at least one, right?
 
 `subcommand` declares `identifier` to be a variable of type `bool` that is `true`
 if the first command line argument passed is `name` or one of the aliases (`alias1`, `alias2`, etc.) and is `false` otherwise.
-After it, you define the subcommand arguments and options you expect.
+Under it, you define the subcommand arguments and options you expect.
 All other commandeer constructs (described below) *can be* placed under it.
 
 For example:
@@ -129,8 +129,12 @@ See `tests/testSubcommands.nim` for a larger example.
 
 `argument` declares a variable named `identifier` of type `type` initialized with
 the value of the corresponding command line argument converted to type `type`.
+
 Correspondence works as follows: the first occurrence of `argument` corresponds
-to the first argument, the second to the second argument and so on.
+to the first argument, the second to the second argument and so on. Note that
+if a `subcommand` is declared then 1) any top-level occurrence of `argument` is
+ignored, 2) the first subcommand `argument` corresponds to the first command line argument
+after the subcommand, the second to the second argument after the subcommand and so on.
 
 
 **arguments `identifier`, `type` [, `atLeast1`]**
@@ -211,5 +215,4 @@ Run the test suite:
 TODO and Contribution
 ---------------------
 
-- Fix global argument(s) bug
 - Use and see what needs to be added

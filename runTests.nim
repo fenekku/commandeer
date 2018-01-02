@@ -19,8 +19,9 @@ if compiled == 0:
   var exitTuple : tuple[output: string, exitCode: int]
 
   for jo in j["tests"].items():
+    var cmd = "tests" / jo["file name"].str & " " & jo["args"].str
     try:
-      exitTuple = execCmdEx("tests" / jo["file name"].str & " " & jo["args"].str)
+      exitTuple = execCmdEx(cmd)
       doAssert(exitTuple.exitCode == jo["expect"].num)
       if jo.hasKey("msg"): doAssert(jo["msg"].str == exitTuple.output)
       write(stdout, ".")
@@ -28,6 +29,7 @@ if compiled == 0:
       write(stdout, "F")
       echo ""
       echo "Test '", jo["test name"].str, "' failed."
+      echo "Ran " & cmd
       echo "Expected: ", if jo.hasKey("msg"): repr(jo["msg"].str) else: $jo["expect"].num
       echo "Got: ", repr(exitTuple.output)
       quit(QuitFailure)

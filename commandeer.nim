@@ -11,45 +11,64 @@ type
   Quantifier {.pure.} = enum
     single, oneOrMore, zeroOrMore
   Assigner = tuple[assign: assignmentProc, quantity: Quantifier]
-  # We only allow one level of SubCommand, so not
-  # a recursive definition
-  SubCommand = ref object
+  # We only allow one level of Subcommand, so not a recursive definition
+  Subcommand = ref object
     argumentAssigners: seq[Assigner]
     index: int
-    shortOptionAssigners: TableRef[string, assignmentProc]
-    longOptionAssigners: TableRef[string, assignmentProc]
+    shortOptionAssigners: TableRef[string, Assigner]
+    longOptionAssigners: TableRef[string, Assigner]
     activate: proc()
 
 
-proc newSubCommand(p: proc() = proc()=discard): SubCommand =
+proc newSubcommand(p: proc() = proc()=discard): Subcommand =
   new(result)
   result.argumentAssigners = newSeq[Assigner]()
   result.index = 0
-  result.shortOptionAssigners = newTable[string, assignmentProc]()
-  result.longOptionAssigners = newTable[string, assignmentProc]()
-  result.activate = p  # proc() = discard
+  result.shortOptionAssigners = newTable[string, Assigner]()
+  result.longOptionAssigners = newTable[string, Assigner]()
+  result.activate = p
+
+
+proc mergeIn(s1: var Subcommand, s2: Subcommand) =
+  s1.argumentAssigners = s2.argumentAssigners
+  for key, value in s2.shortOptionAssigners.pairs():
+    s1.shortOptionAssigners[key] = value
+  for key, value in s2.longOptionAssigners.pairs():
+    s1.longOptionAssigners[key] = value
+  s1.activate = s2.activate
+
+
+proc getOptionAssigner(s: Subcommand, key: string): Assigner =
+  if key in s.longOptionAssigners:
+    return s.longOptionAssigners[key]
+  elif key in s.shortOptionAssigners:
+    return s.shortOptionAssigners[key]
+  else:
+    # Ignore superfluous extra option
+    return (proc(value: string) {.closure.} = discard, Quantifier.single)
 
 
 var errorMessage: string = ""
-var currentSubCommand = newSubCommand()
-var subCommands = newTable[string, SubCommand]()
-subCommands[""] = currentSubCommand
+var currentSubcommand = newSubcommand()
+var subCommands = newTable[string, Subcommand]()
 var cliTokens: seq[GetoptResult]
+var inSubcommand = false
+
+## Debugging procs ##
+
+proc `$`*(f: assignmentProc): string = "assignmentProc"
 
 
-## Debugging, conversion and utility procs ##
+proc `$`*(s: Subcommand): string =
+  result =
+    "{" &
+    "argumentAssigners: " & $s.argumentAssigners & ", " &
+    "shorts: " & $s.shortOptionAssigners & ", " &
+    "longs: " & $s.longOptionAssigners &
+    "}"
 
-# proc `$`*(f: assignmentProc): string = "assignmentProc"
 
-
-# proc `$`*(s: SubCommand): string =
-#   result =
-#     "{" &
-#     "argumentAssigners: " & $s.argumentAssigners & ", " &
-#     "shorts: " & $s.shortOptionAssigners & ", " &
-#     "longs: " & $s.longOptionAssigners &
-#     "}"
-
+## Conversion procs ##
 
 proc assignConversion(variable: var int, value: string) =
   variable = strutils.parseInt(value)
@@ -97,38 +116,6 @@ proc assignConversion(variable: var seq[char], value: string) =
   variable.add(value[0])
 
 
-proc exitWithErrorMessage(msg="") =
-  if msg != "" and errorMessage != "":
-    quit msg & "\n" & errorMessage, QuitFailure
-  elif msg != "":
-    quit msg, QuitFailure
-  elif errorMessage != "":
-    quit errorMessage, QuitFailure
-  else:
-    quit QuitFailure
-
-
-proc getOptionAssignment(key: string): assignmentProc =
-  var tmpSubCommand = currentSubCommand
-  var optionAssignmentProcs: TableRef[string, assignmentProc]
-
-  while not tmpSubCommand.isNil and optionAssignmentProcs.isNil:
-    if key in tmpSubCommand.longOptionAssigners:
-      optionAssignmentProcs = tmpSubCommand.longOptionAssigners
-    elif key in tmpSubCommand.shortOptionAssigners:
-      optionAssignmentProcs = tmpSubCommand.shortOptionAssigners
-    else:
-      if tmpSubCommand == subcommands[""]:
-        tmpSubCommand = nil
-      else:
-        tmpSubCommand = subcommands[""]
-
-  if tmpSubCommand.isNil:
-    return nil
-  else:
-    return optionAssignmentProcs[key]
-
-
 ## Interpretation of the tokens  ##
 
 type
@@ -153,7 +140,7 @@ proc value(cmdToken: CmdToken): string =
 proc obtainCmdToken(consume: bool): CmdToken =
   if cliTokens.len() > 0:
     let cliToken = if consume: cliTokens.pop() else: cliTokens[^1]
-    if currentSubCommand.index == 0 and cliToken.key in subcommands:
+    if not inSubcommand and currentSubcommand.index == 0 and cliToken.key in subcommands:
       return (getOptResult: cliToken, kind: CmdTokenKind.subcommand)
     elif cliToken.kind in [parseopt2.cmdLongOption, parseopt2.cmdShortOption]:
       return (getOptResult: cliToken, kind: CmdTokenKind.option)
@@ -174,6 +161,17 @@ proc addToken(token: CmdToken) =
   cliTokens.add(token.getOptResult)
 
 
+proc exitWithErrorMessage(msg="") =
+  if msg != "" and errorMessage != "":
+    quit msg & "\n" & errorMessage, QuitFailure
+  elif msg != "":
+    quit msg, QuitFailure
+  elif errorMessage != "":
+    quit errorMessage, QuitFailure
+  else:
+    quit QuitFailure
+
+
 proc interpretCli() =
   while true:
     var token = readCmdToken()
@@ -181,23 +179,23 @@ proc interpretCli() =
     case token.kind
     of CmdTokenKind.empty:
       # If didn't fulfill required arguments
-      if currentSubCommand.index < len(currentSubCommand.argumentAssigners):
-        let last = high(currentSubCommand.argumentAssigners)
-        for assigner in currentSubCommand.argumentAssigners[currentSubCommand.index..last]:
+      if currentSubcommand.index < len(currentSubcommand.argumentAssigners):
+        let last = high(currentSubcommand.argumentAssigners)
+        for assigner in currentSubcommand.argumentAssigners[currentSubcommand.index..last]:
           if assigner.quantity != Quantifier.zeroOrMore:
             exitWithErrorMessage("Missing command line arguments")
       break
 
     of CmdTokenKind.subcommand:
-      currentSubCommand = subcommands[token.key]
-      currentSubCommand.activate()
+      currentSubcommand.mergeIn(subcommands[token.key])
+      currentSubcommand.activate()
 
     of CmdTokenKind.argument:
       # Ignore superfluous extra arguments
-      if currentSubCommand.index >= len(currentSubCommand.argumentAssigners):
+      if currentSubcommand.index >= len(currentSubcommand.argumentAssigners):
         continue
 
-      var assigner = currentSubCommand.argumentAssigners[currentSubCommand.index]
+      var assigner = currentSubcommand.argumentAssigners[currentSubcommand.index]
       var atLeastOneAssignment = false
 
       try:
@@ -220,38 +218,34 @@ proc interpretCli() =
           else:
             exitWithErrorMessage(getCurrentExceptionMsg())
 
-      inc(currentSubCommand.index)
+      inc(currentSubcommand.index)
 
     of CmdTokenKind.option:
-      var assign = getOptionAssignment(token.key)
-
-      if assign.isNil:
-        # Ignore superfluous extra option
-        continue
+      var assigner = currentSubcommand.getOptionAssigner(token.key)
 
       try:
-        assign(token.value)
+        assigner.assign(token.value)
       except ValueError:
+        # There might be a space separating key and value
+        # The value is the next token
         if peekCmdToken().kind == CmdTokenKind.argument:
-          # There might be a space separating key and value
-          # The value is the next token
           token = readCmdToken()
           try:
-            assign(token.value)
+            assigner.assign(token.value)
           except ValueError:
             exitWithErrorMessage(getCurrentExceptionMsg())
         elif token.value != "":
+          # Conversion error
           exitWithErrorMessage(getCurrentExceptionMsg())
         else:
           exitWithErrorMessage("Missing value for option '" & token.key & "'")
-
 
 
 ## Command line dsl keywords ##
 
 template argument*(identifier: untyped, t: typeDesc): untyped =
   var identifier: t
-  currentSubCommand.argumentAssigners.add((
+  currentSubcommand.argumentAssigners.add((
     proc(value: string) {.closure.} =
       try:
         assignConversion(identifier, value)
@@ -267,7 +261,7 @@ template argument*(identifier: untyped, t: typeDesc): untyped =
 
 template arguments*(identifier: untyped, t: typeDesc, atLeast1: bool=true): untyped =
   var identifier = newSeq[t]()
-  currentSubCommand.argumentAssigners.add(
+  currentSubcommand.argumentAssigners.add(
     (
       proc(value: string) {.closure.} =
         try:
@@ -286,37 +280,47 @@ template arguments*(identifier: untyped, t: typeDesc, atLeast1: bool=true): unty
 template option*(identifier: untyped, t: typeDesc, long, short: string,
                  default: t): untyped =
   var identifier: t = default
-  var assignment = proc(value: string) =
-    try:
-      assignConversion(identifier, value)
-    except ValueError:
-      raise newException(
-        ValueError,
-        "Couldn't convert '" & value & "' to " & name(t)
-      )
-  currentSubCommand.longOptionAssigners[long] = assignment
-  currentSubCommand.shortOptionAssigners[short] = assignment
+  var assigner = (
+    proc(value: string) {.closure.} =
+      try:
+        assignConversion(identifier, value)
+      except ValueError:
+        raise newException(
+          ValueError,
+          "Couldn't convert '" & value & "' to " & name(t)
+        )
+    ,
+    Quantifier.single
+  )
+  currentSubcommand.longOptionAssigners[long] = assigner
+  currentSubcommand.shortOptionAssigners[short] = assigner
 
 
 template option*(identifier: untyped, t: typeDesc, long, short: string): untyped =
   var identifier: t
-  var assignment = proc(value: string) =
-    try:
-      assignConversion(identifier, value)
-    except ValueError:
-      raise newException(
-        ValueError,
-        "Couldn't convert '" & value & "' to " & name(t)
-      )
-  currentSubCommand.longOptionAssigners[long] = assignment
-  currentSubCommand.shortOptionAssigners[short] = assignment
+  var assigner = (
+    proc(value: string) {.closure.} =
+      try:
+        assignConversion(identifier, value)
+      except ValueError:
+        raise newException(
+          ValueError,
+          "Couldn't convert '" & value & "' to " & name(t)
+        )
+    ,
+    Quantifier.single
+  )
+  currentSubcommand.longOptionAssigners[long] = assigner
+  currentSubcommand.shortOptionAssigners[short] = assigner
 
 
 template exitoption*(long, short, msg: string): untyped =
-  var exiter = proc(value: string) =
-    quit msg, QuitSuccess
-  currentSubCommand.longOptionAssigners[long] = exiter
-  currentSubCommand.shortOptionAssigners[short] = exiter
+  var exiter = (
+    (proc(value: string) {.closure.} = quit msg, QuitSuccess),
+    Quantifier.single
+  )
+  currentSubcommand.longOptionAssigners[long] = exiter
+  currentSubcommand.shortOptionAssigners[short] = exiter
 
 
 template errormsg*(msg: string): untyped =
@@ -326,15 +330,19 @@ template errormsg*(msg: string): untyped =
 template subcommand*(identifier: untyped, subcommandNames: varargs[string],
                      statements: untyped): untyped =
   var identifier: bool = false
-  var thisSubCommand = newSubCommand(proc() = identifier = true)
+  var thisSubcommand = newSubcommand(
+    proc() =
+      identifier = true
+      inSubcommand = true
+  )
 
-  currentSubCommand = thisSubCommand
+  var tmpSubcommand = currentSubcommand
+  currentSubcommand = thisSubcommand
   statements
-  currentSubCommand = subCommands[""]
+  currentSubcommand = tmpSubcommand
 
   for subcommandName in subcommandNames:
-    subCommands[subcommandName] = thisSubCommand
-
+    subCommands[subcommandName] = thisSubcommand
 
 template commandline*(statements: untyped): untyped =
   cliTokens = reversed(toSeq(parseopt2.getopt()))

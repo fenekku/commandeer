@@ -45,7 +45,7 @@ else:
 
 if testing:
   if add:
-    doAssert(filenames == @["foo", "bar", "baz"])
+    doAssert(filenames == @["clone", "bar", "baz"])
     doAssert(force == true)
     doAssert(interactive == false)
     doAssert(clone == false)
